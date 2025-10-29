@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'main',
     'index',
-    'mptt'
+    'mptt',
+    'easy_pdf',
+    
 ]
 
 MIDDLEWARE = [

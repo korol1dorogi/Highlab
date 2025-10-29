@@ -4,7 +4,7 @@ from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from .models import Category, Product, Review
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .cart import CartManager
 from .forms import OrderForm
 from .models import Category, Product, ProductImage, Review, Cart, CartItem, Order, OrderItem
@@ -12,6 +12,16 @@ from .telegram_service import TelegramService
 from django.contrib import messages
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
+from django.shortcuts import get_object_or_404
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+from reportlab.lib.units import mm
+from reportlab.pdfbase.ttfonts import TTFont
+from io import BytesIO
+from datetime import datetime
 
 class ProductListView(ListView):
     """
@@ -420,3 +430,207 @@ def order_success(request, order_id):
     except Order.DoesNotExist:
         messages.error(request, "Заказ не найден")
         return redirect('shop:product_list')
+    
+
+def download_order_pdf(request, order_id):
+    """Генерация PDF с русскими буквами используя системные шрифты"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    # Проверка прав доступа
+    if request.user.is_authenticated:
+        if order.user != request.user:
+            return HttpResponse("Доступ запрещен", status=403)
+    else:
+        if not hasattr(order, 'session_key') or order.session_key != request.session.session_key:
+            return HttpResponse("Доступ запрещен", status=403)
+    
+    # Создаем буфер для PDF
+    buffer = BytesIO()
+    
+    # Создаем PDF документ
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # АВТОМАТИЧЕСКИЙ ВЫБОР ШРИФТА С ПОДДЕРЖКОЙ КИРИЛЛИЦЫ
+    # Пробуем найти системные шрифты с кириллицей
+    font_name = "Helvetica"  # fallback
+    
+    try:
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        import os
+        
+        # Список возможных путей к шрифтам с кириллицей
+        font_paths = []
+        
+        if os.name == 'nt':  # Windows
+            font_paths = [
+                'C:/Windows/Fonts/arial.ttf',
+                'C:/Windows/Fonts/tahoma.ttf',
+                'C:/Windows/Fonts/verdana.ttf',
+            ]
+        else:  # Linux
+            font_paths = [
+                '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+                '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
+            ]
+        
+        # Пробуем зарегистрировать первый доступный шрифт
+        for font_path in font_paths:
+            if os.path.exists(font_path):
+                try:
+                    pdfmetrics.registerFont(TTFont('CyrillicFont', font_path))
+                    font_name = 'CyrillicFont'
+                    print(f"Используем шрифт: {font_path}")
+                    break
+                except:
+                    continue
+                    
+    except Exception as e:
+        print(f"Не удалось зарегистрировать шрифт: {e}")
+        # Используем стандартный Helvetica (без кириллицы)
+    
+    # Начальные координаты
+    y_position = height - 50
+    
+    # Заголовок - увеличенный размер
+    p.setFont(font_name, 18)
+    p.drawString(50, y_position, "Highlab Store")
+    y_position -= 35
+    
+    # Номер заказа
+    p.setFont(font_name, 16)
+    p.drawString(50, y_position, f"Заказ #{order.id}")
+    y_position -= 25
+    
+    # Дата
+    p.setFont(font_name, 10)
+    created_date = order.created_at if hasattr(order, 'created_at') else order.created
+    p.drawString(50, y_position, f"Дата оформления: {created_date.strftime('%d.%m.%Y %H:%M')}")
+    y_position -= 30
+    
+    # Разделитель
+    p.line(50, y_position, width-50, y_position)
+    y_position -= 30
+    
+    # Информация о покупателе
+    p.setFont(font_name, 12)
+    p.drawString(50, y_position, "Информация о покупателе:")
+    y_position -= 20
+    
+    p.setFont(font_name, 10)
+    p.drawString(50, y_position, f"Имя: {order.first_name} {order.last_name}")
+    y_position -= 15
+    p.drawString(50, y_position, f"Телефон: {order.phone}")
+    y_position -= 15
+    p.drawString(50, y_position, f"Email: {order.email}")
+    y_position -= 15
+    
+    if order.address:
+        # Адрес может быть длинным - разбиваем на строки
+        address_lines = []
+        words = order.address.split()
+        current_line = ""
+        
+        for word in words:
+            test_line = current_line + " " + word if current_line else word
+            if len(test_line) <= 50:
+                current_line = test_line
+            else:
+                if current_line:
+                    address_lines.append(current_line)
+                current_line = word
+        if current_line:
+            address_lines.append(current_line)
+        
+        p.drawString(50, y_position, "Адрес:")
+        y_position -= 15
+        for line in address_lines:
+            p.drawString(65, y_position, line)
+            y_position -= 15
+    else:
+        y_position -= 15
+    
+    y_position -= 10
+    
+    # Разделитель
+    p.line(50, y_position, width-50, y_position)
+    y_position -= 20
+    
+    # Состав заказа
+    p.setFont(font_name, 12)
+    p.drawString(50, y_position, "Состав заказа:")
+    y_position -= 25
+    
+    # Заголовки таблицы
+    p.setFont(font_name, 10)
+    p.drawString(50, y_position, "Товар")
+    p.drawString(250, y_position, "Цена")
+    p.drawString(320, y_position, "Кол-во")
+    p.drawString(370, y_position, "Сумма")
+    y_position -= 20
+    
+    # Линия под заголовком
+    p.line(50, y_position, width-50, y_position)
+    y_position -= 10
+    
+    p.setFont(font_name, 9)
+    
+    # Товары
+    for item in order.items.all():
+        if y_position < 100:
+            p.showPage()
+            y_position = height - 50
+            p.setFont(font_name, 9)
+        
+        # Название товара
+        product_name = item.product.name
+        if len(product_name) > 45:
+            product_name = product_name[:42] + "..."
+        
+        p.drawString(50, y_position, product_name)
+        p.drawString(250, y_position, f"{item.price} ₽")
+        p.drawString(320, y_position, str(item.quantity))
+        p.drawString(370, y_position, f"{item.total_price} ₽")
+        y_position -= 15
+    
+    y_position -= 10
+    
+    # Итоговая линия
+    p.line(300, y_position, width-50, y_position)
+    y_position -= 15
+    
+    # Итого
+    p.setFont(font_name, 12)
+    p.drawString(300, y_position, "Итого:")
+    p.drawString(370, y_position, f"{order.total_price} ₽")
+    y_position -= 30
+    
+    # Разделитель
+    p.line(50, y_position, width-50, y_position)
+    y_position -= 20
+    
+    # Подвал
+    p.setFont(font_name, 9)
+    p.drawString(50, y_position, "Благодарим за ваш заказ!")
+    y_position -= 15
+    p.drawString(50, y_position, "Highlab Store | Телефон: +7 (XXX) XXX-XX-XX")
+    y_position -= 15
+    p.drawString(50, y_position, "Email: info@highlab.ru")
+    y_position -= 15
+    p.drawString(50, y_position, f"Сформировано: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+    
+    # Сохраняем PDF
+    p.showPage()
+    p.save()
+    
+    # Получаем PDF из буфера
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    # Создаем HTTP response с PDF
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="order_{order.id}.pdf"'
+    
+    return response

@@ -41,4 +41,5 @@ urlpatterns = [
     path('cart/clear/', views.cart_clear, name='cart_clear'),
     path('checkout/', views.checkout, name='checkout'),
     path('order/success/<int:order_id>/', views.order_success, name='order_success'),
+    path('order/pdf/<int:order_id>/', views.download_order_pdf, name='download_order_pdf')
 ]

@@ -7,9 +7,11 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # URL магазина
-    path('shop/', include('main.urls', namespace='main')),
+    # URL магазина электроники
+    path('shop_electronic/', include('main.urls', namespace='main')),
     
+    # URL магазина строй товаров
+    path('shop_building/', include('main2.urls', namespace='main2')),
     # Главная страница (будет создана позже)
     path('', include('index.urls', namespace='index')),
 ]

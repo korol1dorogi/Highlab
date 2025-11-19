@@ -17,113 +17,6 @@
     <!-- Изображения товара -->
     <div class="col-md-6">
         <div class="card">
-            <img src="{{ product.main_image.url }}" class="card-img-top" alt="{{ product.name }}" 
-                 id="main-product-image" style="max-height: 500px; object-fit: contain;">
-            
-            {% if product.images.all %}
-            <div class="card-body">
-                <div class="row g-2">
-                    {% for image in product.images.all %}
-                    <div class="col-3">
-                        <img src="{{ image.image.url }}" class="img-thumbnail" alt="{{ image.alt_text }}"
-                             style="cursor: pointer; height: 80px; object-fit: cover;"
-                             onmouseover="document.getElementById('main-product-image').src = this.src">
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Информация о товаре -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h1 class="card-title h3">{{ product.name }}</h1>
-                <p class="text-muted">Артикул: {{ product.sku }}</p>
-                
-                <div class="price-section mb-3">
-                    {% if product.has_discount %}
-                    <div class="d-flex align-items-center">
-                        <span class="price-old me-3 h5">{{ product.old_price }} ₽</span>
-                        <span class="price-new h3">{{ product.price }} ₽</span>
-                        <span class="badge bg-danger ms-2">
-                            -{{ product.discount_percent|floatformat:0 }}%
-                        </span>
-                    </div>
-                    {% else %}
-                    <span class="h3 text-dark">{{ product.price }} ₽</span>
-                    {% endif %}
-                </div>
-
-                <!-- Наличие -->
-                <div class="availability mb-3">
-                    {% if product.in_stock %}
-                    <span class="badge bg-success">
-                        <i class="bi bi-check-circle"></i> В наличии ({{ product.quantity }} шт.)
-                    </span>
-                    {% else %}
-                    <span class="badge bg-secondary">
-                        <i class="bi bi-x-circle"></i> Нет в наличии
-                    </span>
-                    {% endif %}
-                </div>
-
-                <!-- Кнопки действий -->
-                <!-- В разделе с кнопками действий в product_detail.html -->
-<div class="action-buttons mb-4">
-    {% if product.in_stock %}
-    <form method="post" action="{% url 'shop:cart_add' product.id %}" class="add-to-cart-form">
-        {% csrf_token %}
-        <input type="hidden" name="quantity" value="1">
-        <input type="hidden" name="product_slug" value="{{ product.slug }}">
-        <button type="submit" class="btn btn-success btn-lg w-100 mb-2">
-            <i class="bi bi-cart-plus"></i> Добавить в корзину
-        </button>
-    </form>
-    {% else %}
-    <button class="btn btn-secondary w-100 mb-2" disabled>
-        <i class="bi bi-bell"></i> Уведомить о поступлении
-    </button>
-    {% endif %}
-    
-    <!-- Убедитесь, что эта кнопка тоже есть -->
-    <a href="{% url 'shop:cart_detail' %}" class="btn btn-outline-primary w-100">
-        <i class="bi bi-cart"></i> Перейти в корзину
-    </a>
-</div>
-
-                <!-- Описание -->
-                <div class="description-section">
-                    <h5>Описание</h5>
-                    <p class="card-text">{{ product.description|linebreaks }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Похожие товары -->
-{% if related_products %}
-<div class="row mt-5">
-    <div class="col-12">
-        <h3 class="mb-4">Похожие товары</h3>
-        <div class="row g-4">
-            {% for related_product in related_products %}
-            <div class="col-lg-3 col-md-4 col-sm-6">
-                {% include 'includes/product_card.html' with product=related_product %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Отзывы -->
-<div class="row mt-5">
-    <div class="col-12">
-        <div class="card">
             <!-- Главное изображение - адаптивное -->
             <div class="product-detail-image-container">
                 <img 
@@ -158,6 +51,154 @@
             </div>
             {% endif %}
         </div>
+    </div>
+
+    <!-- Информация о товаре -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title h3">{{ product.name }}</h1>
+                <p class="text-muted">Артикул: {{ product.sku }}</p>
+                
+                <div class="price-section mb-3">
+                    {% if product.has_discount %}
+                    <div class="d-flex align-items-center">
+                        <span class="price-old me-3 h5">{{ product.old_price }} ₽</span>
+                        <span class="price-new h3">{{ product.base_price }} ₽</span>
+                        <span class="badge bg-danger ms-2">
+                            -{{ product.discount_percent|floatformat:0 }}%
+                        </span>
+                    </div>
+                    {% else %}
+                    <span class="h3 text-dark">{{ product.base_price }} ₽</span>
+                    {% endif %}
+                </div>
+
+                <!-- Выбор варианта -->
+                <div class="variant-selection mb-3">
+                    {% if product.variants.all %}
+                        <label for="variant-select" class="form-label"><strong>Выберите вариант:</strong></label>
+                        <select class="form-select" id="variant-select" name="variant_id">
+                            {% for variant in product.variants.all %}
+                                <option value="{{ variant.id }}" 
+                                        data-price="{{ variant.price }}"
+                                        data-quantity="{{ variant.quantity }}"
+                                        {% if not variant.in_stock %}disabled{% endif %}>
+                                    {{ variant.name }} - {{ variant.price }} ₽
+                                    {% if not variant.in_stock %} (Нет в наличии){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <!-- Отображение наличия выбранного варианта -->
+                        <div id="variant-stock" class="mt-2">
+                            {% with first_variant=product.variants.first %}
+                                {% if first_variant.in_stock %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> В наличии ({{ first_variant.quantity }} шт.)
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-x-circle"></i> Нет в наличии
+                                    </span>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    {% else %}
+                        <!-- Если вариантов нет, используем основной товар -->
+                        <input type="hidden" name="variant_id" value="">
+                        <div class="availability mb-3">
+                            {% if product.in_stock %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> В наличии ({{ product.total_quantity }} шт.)
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-x-circle"></i> Нет в наличии
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Кнопки действий -->
+                <div class="action-buttons mb-4">
+                    {% if product.in_stock %}
+                    <form method="post" action="{% url 'shop:cart_add' product.id %}" class="add-to-cart-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="quantity" value="1">
+                        <input type="hidden" name="variant_id" id="selected-variant-id" 
+                               value="{% if product.variants.all %}{{ product.variants.first.id }}{% endif %}">
+                        <button type="submit" class="btn btn-success btn-lg w-100 mb-2" id="add-to-cart-btn">
+                            <i class="bi bi-cart-plus"></i> Добавить в корзину
+                        </button>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg w-100 mb-2" disabled>
+                        <i class="bi bi-bell"></i> Уведомить о поступлении
+                    </button>
+                    {% endif %}
+                    
+                    <a href="{% url 'shop:cart_detail' %}" class="btn btn-outline-primary btn-lg w-100">
+                        <i class="bi bi-cart"></i> Перейти в корзину
+                    </a>
+                </div>
+
+                <!-- Описание -->
+                <div class="description-section">
+                    <h5>Описание</h5>
+                    <p class="card-text">{{ product.description|linebreaks }}</p>
+                </div>
+
+                <!-- Характеристики -->
+                {% if product.properties.all %}
+                <div class="properties-section mt-4">
+                    <h5>Характеристики</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tbody>
+                                {% for property in product.properties.all %}
+                                <tr>
+                                    <td><strong>{{ property.name }}</strong></td>
+                                    <td>{{ property.value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Отзывы -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Отзывы о товаре</h5>
+            </div>
+            <div class="card-body">
+                {% if approved_reviews %}
+                    <div class="reviews-list">
+                        {% for review in approved_reviews %}
+                        <div class="review-item border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>{{ review.user.username }}</strong>
+                                <small class="text-muted">{{ review.created|date:"d.m.Y" }}</small>
+                            </div>
+                            <div class="rating mb-2">
+                                <span class="text-warning">{{ review.get_rating_stars }}</span>
+                            </div>
+                            <p class="mb-0">{{ review.comment }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Пока нет отзывов о этом товаре.</p>
+                {% endif %}
 
                 <!-- Форма отзыва -->
                 {% if user.is_authenticated %}
@@ -193,15 +234,80 @@
         </div>
     </div>
 </div>
+
+<!-- Похожие товары -->
+{% if related_products %}
+<div class="row mt-5">
+    <div class="col-12">
+        <h3 class="mb-4">Похожие товары</h3>
+        <div class="row g-4">
+            {% for related_product in related_products %}
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                {% include 'includes/product_card.html' with product=related_product %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Простой скрипт для добавления в корзину (заглушка)
-document.getElementById('add-to-cart')?.addEventListener('click', function() {
-    const quantity = document.getElementById('quantity').value;
-    alert(`Товар "${'{{ product.name }}'}" добавлен в корзину в количестве ${quantity} шт.`);
-    // Здесь будет реальная логика добавления в корзину
+document.addEventListener('DOMContentLoaded', function() {
+    const variantSelect = document.getElementById('variant-select');
+    const selectedVariantId = document.getElementById('selected-variant-id');
+    const variantStock = document.getElementById('variant-stock');
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    
+    if (variantSelect) {
+        variantSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const price = selectedOption.dataset.price;
+            const quantity = selectedOption.dataset.quantity;
+            const isInStock = !selectedOption.disabled;
+            
+            // Обновляем скрытое поле с ID варианта
+            selectedVariantId.value = this.value;
+            
+            // Обновляем отображение наличия
+            if (isInStock) {
+                variantStock.innerHTML = `<span class="badge bg-success">
+                    <i class="bi bi-check-circle"></i> В наличии (${quantity} шт.)
+                </span>`;
+                if (addToCartBtn) addToCartBtn.disabled = false;
+            } else {
+                variantStock.innerHTML = `<span class="badge bg-secondary">
+                    <i class="bi bi-x-circle"></i> Нет в наличии
+                </span>`;
+                if (addToCartBtn) addToCartBtn.disabled = true;
+            }
+        });
+    }
+
+    // Lazy loading для изображений
+    const lazyImages = document.querySelectorAll('.lazy-image');
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                if (img.dataset.src) {
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy-load-placeholder');
+                    img.classList.add('loaded');
+                    img.removeAttribute('data-src');
+                }
+                observer.unobserve(img);
+            }
+        });
+    });
+
+    lazyImages.forEach(img => {
+        if (!img.src || img.src.includes('data:image/svg+xml')) {
+            img.classList.add('lazy-load-placeholder');
+        }
+        imageObserver.observe(img);
+    });
 });
 </script>
 {% endblock %}

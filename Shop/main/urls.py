@@ -33,12 +33,14 @@ urlpatterns = [
          views.product_search, 
          name='product_search'),
 
-     # Корзина
+    # Корзина (ОБНОВЛЕННЫЕ URL ДЛЯ ВАРИАНТОВ)
     path('cart/', views.cart_detail, name='cart_detail'),
-    path('cart/add/<int:product_id>/', views.cart_add, name='cart_add'),
-    path('cart/remove/<int:product_id>/', views.cart_remove, name='cart_remove'),
-    path('cart/update/<int:product_id>/', views.cart_update, name='cart_update'),
+    path('cart/add/<int:product_id>/', views.cart_add, name='cart_add'),  # product_id в URL, variant_id в POST
+    path('cart/update/<int:variant_id>/', views.cart_update, name='cart_update'),  # variant_id в URL
+    path('cart/remove/<int:variant_id>/', views.cart_remove, name='cart_remove'),  # variant_id в URL
     path('cart/clear/', views.cart_clear, name='cart_clear'),
+    
+    # Оформление заказа
     path('checkout/', views.checkout, name='checkout'),
     path('order/success/<int:order_id>/', views.order_success, name='order_success'),
     path('order/pdf/<int:order_id>/', views.download_order_pdf, name='download_order_pdf')

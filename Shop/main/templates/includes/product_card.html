@@ -1,3 +1,4 @@
+<!-- templates/includes/product_card.html -->
 <div class="card product-card h-100">
     {% if product.has_discount %}
     <span class="position-absolute top-0 start-0 badge bg-danger m-2" style="z-index: 1;">Скидка</span>
@@ -40,28 +41,59 @@
             {{ product.description|truncatewords:12 }}
         </div>
         
+        <!-- Информация о вариантах -->
+        {% if product.variants.all %}
+            <div class="variants-info mb-2">
+                <small class="text-muted">
+                    {% if product.variants.count == 1 %}
+                        {% with variant=product.variants.first %}
+                            {% if variant.name %}{{ variant.name }}{% endif %}
+                        {% endwith %}
+                    {% else %}
+                        {{ product.variants.count }} вариантов
+                    {% endif %}
+                </small>
+            </div>
+        {% endif %}
+        
         <div class="mt-auto">
             <div class="price mb-2">
                 {% if product.has_discount %}
                 <div>
                     <span class="price-old me-2 small">{{ product.old_price }} ₽</span>
-                    <span class="price-new fw-bold">{{ product.price }} ₽</span>
+                    <span class="price-new fw-bold">{{ product.base_price }} ₽</span>
                 </div>
                 {% else %}
-                <span class="fw-bold">{{ product.price }} ₽</span>
+                <span class="fw-bold">
+                    {% if product.variants.count > 1 %}
+                        от {{ product.min_price }} ₽
+                    {% else %}
+                        {{ product.base_price }} ₽
+                    {% endif %}
+                </span>
                 {% endif %}
             </div>
             
             <div class="d-grid gap-1">
                 {% if product.in_stock %}
-                <form method="post" action="{% url 'shop:cart_add' product.id %}" class="add-to-cart-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="quantity" value="1">
-                    <input type="hidden" name="product_slug" value="{{ product.slug }}">
-                    <button type="submit" class="btn btn-success btn-sm w-100">
-                        <i class="bi bi-cart-plus"></i> В корзину
-                    </button>
-                </form>
+                    {% if product.variants.count == 1 %}
+                        <!-- Если только один вариант, добавляем сразу -->
+                        {% with variant=product.variants.first %}
+                        <form method="post" action="{% url 'shop:cart_add' product.id %}" class="add-to-cart-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="1">
+                            <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                            <button type="submit" class="btn btn-success btn-sm w-100">
+                                <i class="bi bi-cart-plus"></i> В корзину
+                            </button>
+                        </form>
+                        {% endwith %}
+                    {% else %}
+                        <!-- Если несколько вариантов, ведем на страницу товара -->
+                        <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-eye"></i> Выбрать вариант
+                        </a>
+                    {% endif %}
                 {% else %}
                 <button class="btn btn-secondary btn-sm w-100" disabled>
                     Нет в наличии

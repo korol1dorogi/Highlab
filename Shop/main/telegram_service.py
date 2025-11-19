@@ -40,7 +40,7 @@ class TelegramService:
         """Форматирование сообщения для Telegram"""
         items_text = ""
         for item in order.items.all():
-            items_text += f"• {item.product.name}\n"
+            items_text += f"• {item.product_variant.name}\n"
             items_text += f"  Количество: {item.quantity} шт.\n"
             items_text += f"  Цена: {item.price} ₽\n"
             items_text += f"  Сумма: {item.total_price} ₽\n\n"

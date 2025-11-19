@@ -1,13 +1,12 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from mptt.admin import MPTTModelAdmin
-from .models import Category, Product, ProductImage, Review, Order, OrderItem
+from .models import Category, Product, ProductImage, ProductProperty, ProductVariant, Review, Order, OrderItem
 
 @admin.register(Category)
 class CategoryAdmin(MPTTModelAdmin):
     """
     Админ-класс для категорий с древовидной структурой
-    Особенности: MPTT админка, фильтры, поиск, prepopulated_fields
     """
     list_display = ['name', 'slug', 'is_active', 'product_count', 'created']
     list_filter = ['is_active', 'created', 'updated']
@@ -38,11 +37,9 @@ class CategoryAdmin(MPTTModelAdmin):
         return obj.products.count()
     product_count.short_description = 'Количество товаров'
 
-# shop/admin.py
 class ProductImageInline(admin.TabularInline):
     """
     Inline для управления изображениями товара
-    Особенности: отображение в той же форме, что и товар
     """
     model = ProductImage
     extra = 1
@@ -56,24 +53,38 @@ class ProductImageInline(admin.TabularInline):
         return "Нет изображения"
     image_preview.short_description = 'Превью'
 
+class ProductPropertyInline(admin.TabularInline):
+    """
+    Inline для управления характеристиками товара
+    """
+    model = ProductProperty
+    extra = 1
+    fields = ['name', 'value', 'order']
 
-# shop/admin.py
+class ProductVariantInline(admin.TabularInline):
+    """
+    Inline для управления вариантами товара
+    """
+    model = ProductVariant
+    extra = 1
+    fields = ['name', 'price', 'quantity', 'is_active']
+    readonly_fields = ['external_id']
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     """
     Админ-класс для товаров
-    Особенности: inline для изображений, фильтры, поиск, кастомные действия
     """
     list_display = [
         'name', 
         'sku', 
         'category', 
-        'price', 
+        'base_price', 
         'old_price', 
         'available', 
         'in_stock',
         'has_discount',
-        'created'
+        'created',
     ]
     list_filter = [
         'available', 
@@ -81,24 +92,28 @@ class ProductAdmin(admin.ModelAdmin):
         'created', 
         'updated'
     ]
-    search_fields = ['name', 'sku', 'description']
+    search_fields = ['name', 'sku', 'description', 'external_id']
     prepopulated_fields = {'slug': ('name',)}
-    readonly_fields = ['created', 'updated', 'main_image_preview']
-    list_editable = ['price', 'old_price', 'available']
+    readonly_fields = ['created', 'updated', 'main_image_preview', 'total_quantity', 'external_id']
+    list_editable = ['base_price', 'old_price', 'available']
     actions = ['make_available', 'make_unavailable']
     
-    # Inline для изображений
-    inlines = [ProductImageInline]
+    # Inline для изображений, характеристик и вариантов
+    inlines = [ProductImageInline, ProductPropertyInline, ProductVariantInline]
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('category', 'name', 'slug', 'sku', 'description')
+            'fields': ('category', 'name', 'slug', 'sku', 'external_id', 'description')
         }),
         ('Цены и наличие', {
-            'fields': ('price', 'old_price', 'quantity', 'available')
+            'fields': ('base_price', 'old_price', 'total_quantity', 'available')
         }),
         ('Главное изображение', {
             'fields': ('main_image', 'main_image_preview'),
+        }),
+        ('Дополнительная информация', {
+            'fields': ('external_url', 'search_synonyms'),
+            'classes': ('collapse',)
         }),
         ('Даты', {
             'fields': ('created', 'updated'),
@@ -138,12 +153,50 @@ class ProductAdmin(admin.ModelAdmin):
         self.message_user(request, f'{updated} товаров теперь недоступны')
     make_unavailable.short_description = "Сделать недоступными выбранные товары"
 
-# shop/admin.py
+@admin.register(ProductProperty)
+class ProductPropertyAdmin(admin.ModelAdmin):
+    """
+    Админ-класс для характеристик товара
+    """
+    list_display = ['product', 'name', 'value', 'order']
+    list_filter = ['product']
+    search_fields = ['product__name', 'name', 'value']
+    list_editable = ['value', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('product', 'name', 'value', 'order')
+        }),
+    )
+
+@admin.register(ProductVariant)
+class ProductVariantAdmin(admin.ModelAdmin):
+    """
+    Админ-класс для вариантов товара
+    """
+    list_display = ['product', 'name', 'price', 'quantity', 'is_active', 'external_id']
+    list_filter = ['is_active', 'product']
+    search_fields = ['product__name', 'name', 'external_id']
+    list_editable = ['price', 'quantity', 'is_active']
+    readonly_fields = ['external_id', 'created', 'updated']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('product', 'external_id', 'name', 'sku')
+        }),
+        ('Цена и наличие', {
+            'fields': ('price', 'quantity', 'is_active')
+        }),
+        ('Даты', {
+            'fields': ('created', 'updated'),
+            'classes': ('collapse',)
+        }),
+    )
+
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     """
     Админ-класс для отзывов
-    Особенности: фильтрация по рейтингу, одобрение отзывов
     """
     list_display = [
         'product', 
@@ -206,12 +259,10 @@ class ReviewAdmin(admin.ModelAdmin):
         self.message_user(request, f'{updated} отзывов отклонено')
     disapprove_reviews.short_description = "Отклонить выбранные отзывы"
 
-# shop/admin.py
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
     """
     Админ-класс для изображений товаров
-    Особенности: превью изображений, фильтрация по товарам
     """
     list_display = [
         'product', 
@@ -258,19 +309,16 @@ class ProductImageAdmin(admin.ModelAdmin):
         return "Нет изображения"
     image_preview_large.short_description = 'Большое превью'
 
-# config/settings.py - добавить в конец
-# Кастомизация админ-панели
-ADMIN_SITE_HEADER = "Панель управления интернет-магазином"
-ADMIN_SITE_TITLE = "Интернет-магазин"
-ADMIN_INDEX_TITLE = "Управление магазином"
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    readonly_fields = ['product_variant', 'quantity', 'price']
+    extra = 0
 
-# config/urls.py - можно добавить кастомизацию
-from django.contrib import admin
-
-admin.site.site_header = "Панель управления интернет-магазином"
-admin.site.site_title = "Интернет-магазин"
-admin.site.index_title = "Добро пожаловать в панель управления"
-
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ['order', 'product_variant', 'quantity', 'price']
+    list_filter = ['order']
+    search_fields = ['order__id', 'product_variant__name']
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -278,14 +326,24 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = ['status', 'created']
     search_fields = ['first_name', 'last_name', 'email', 'phone']
     readonly_fields = ['created', 'updated']
-    inlines = []
-
-class OrderItemInline(admin.TabularInline):
-    model = OrderItem
-    readonly_fields = ['product', 'quantity', 'price']
-    extra = 0
-
-@admin.register(OrderItem)
-class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ['order', 'product', 'quantity', 'price']
-    list_filter = ['order']
+    inlines = [OrderItemInline]
+    
+    fieldsets = (
+        ('Контактные данные', {
+            'fields': ('first_name', 'last_name', 'email', 'phone')
+        }),
+        ('Адрес доставки', {
+            'fields': ('address',)
+        }),
+        ('Информация о заказе', {
+            'fields': ('total_price', 'status', 'comment')
+        }),
+        ('Пользователь', {
+            'fields': ('user', 'session_key'),
+            'classes': ('collapse',)
+        }),
+        ('Даты', {
+            'fields': ('created', 'updated'),
+            'classes': ('collapse',)
+        }),
+    )

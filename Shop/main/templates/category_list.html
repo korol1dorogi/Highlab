@@ -15,10 +15,10 @@
                 <div class="card category-card h-100">
                     {% if category.image %}
                     <img src="{{ category.image.url }}" class="card-img-top" alt="{{ category.name }}"
-                         style="height: 200px; object-fit: cover;">
+                         style="height: 250px; max-width: 100%; object-fit: cover;">
                     {% else %}
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                         style="height: 200px;">
+                         style="height: 250px; max-width: 100%;">
                         <i class="bi bi-folder text-muted" style="font-size: 3rem;"></i>
                     </div>
                     {% endif %}

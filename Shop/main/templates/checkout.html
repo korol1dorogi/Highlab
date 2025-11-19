@@ -133,7 +133,12 @@
                         {% for item in cart_items %}
                         <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
                             <div>
-                                <strong>{{ item.product.name }}</strong>
+                                <!-- ИСПРАВЛЕННАЯ СТРОКА: используем product_variant вместо product -->
+                                <strong>{{ item.product_variant.product.name }}</strong>
+                                {% if item.product_variant.name %}
+                                    <br>
+                                    <small class="text-muted">Вариант: {{ item.product_variant.name }}</small>
+                                {% endif %}
                                 <br>
                                 <small class="text-muted">{{ item.quantity }} × {{ item.price }} ₽</small>
                             </div>
@@ -167,20 +172,22 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Маска для телефона (простая версия)
     const phoneInput = document.querySelector('#{{ form.phone.id_for_label }}');
-    phoneInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length > 0) {
-            if (value[0] === '7' || value[0] === '8') {
-                value = value.substring(1);
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value[0] === '7' || value[0] === '8') {
+                    value = value.substring(1);
+                }
+                value = '+7 (' + value;
+                
+                if (value.length > 7) value = value.substring(0, 7) + ') ' + value.substring(7);
+                if (value.length > 12) value = value.substring(0, 12) + '-' + value.substring(12);
+                if (value.length > 15) value = value.substring(0, 15) + '-' + value.substring(15);
             }
-            value = '+7 (' + value;
-            
-            if (value.length > 7) value = value.substring(0, 7) + ') ' + value.substring(7);
-            if (value.length > 12) value = value.substring(0, 12) + '-' + value.substring(12);
-            if (value.length > 15) value = value.substring(0, 15) + '-' + value.substring(15);
-        }
-        e.target.value = value;
-    });
+            e.target.value = value;
+        });
+    }
 });
 </script>
 {% endblock %}

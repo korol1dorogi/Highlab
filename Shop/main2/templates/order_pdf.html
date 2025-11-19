@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Highlab Store</h1>
+      <h2>Заказ #{{ order.id }}</h2>
+      <p>Дата оформления: {{ order.created_at|date:"d.m.Y H:i" }}</p>
+    </div>
+
+    <div class="section">
+      <h3>Информация о покупателе</h3>
+      <p><strong>Имя:</strong> {{ order.first_name }} {{ order.last_name }}</p>
+      <p><strong>Телефон:</strong> {{ order.phone }}</p>
+      <p><strong>Email:</strong> {{ order.email }}</p>
+      {% if order.address %}
+      <p><strong>Адрес:</strong> {{ order.address }}</p>
+      {% endif %}
+    </div>
+
+    <div class="section">
+      <h3>Состав заказа</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Товар</th>
+            <th>Цена</th>
+            <th>Кол-во</th>
+            <th>Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order_items %}
+          <tr>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.price }} ₽</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.total_price }} ₽</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="total"><strong>Итого: {{ order.total_price }} ₽</strong></p>
+    </div>
+
+    <div class="footer">
+      <p>Благодарим за ваш заказ!</p>
+    </div>
+  </div>
+</body>
+</html>

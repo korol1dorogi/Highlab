@@ -1,18 +1,19 @@
 # shop/views.py
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
-from .models import Category, Product, Review
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
-from .cart import CartManager
-from .forms import OrderForm
-from .models import Category, Product, ProductImage, Review, Cart, CartItem, Order, OrderItem
-from .telegram_service import TelegramService
-from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import get_object_or_404
+
+from .models import Category, Product, ProductVariant, ProductImage, Review, Cart, CartItem, Order, OrderItem
+from .cart import CartManager
+from .forms import OrderForm
+from .telegram_service import TelegramService
+
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -48,7 +49,8 @@ class ProductListView(ListView):
             queryset = queryset.filter(
                 Q(name__icontains=search_query) |
                 Q(description__icontains=search_query) |
-                Q(sku__icontains=search_query)
+                Q(sku__icontains=search_query) |
+                Q(search_synonyms__icontains=search_query)
             )
         
         return queryset
@@ -63,9 +65,7 @@ class ProductListView(ListView):
             context['current_category'] = get_object_or_404(Category, slug=category_slug)
         
         return context
-    
 
-# shop/views.py
 class ProductDetailView(DetailView):
     """
     Представление для детальной страницы товара
@@ -77,7 +77,7 @@ class ProductDetailView(DetailView):
     slug_url_kwarg = 'slug'
     
     def get_queryset(self):
-        return Product.objects.filter(available=True).prefetch_related('images', 'reviews')
+        return Product.objects.filter(available=True).prefetch_related('images', 'reviews', 'variants')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -93,8 +93,7 @@ class ProductDetailView(DetailView):
         context['approved_reviews'] = product.reviews.filter(is_approved=True)
         
         return context
-    
-# shop/views.py
+
 class CategoryListView(ListView):
     """
     Представление для списка категорий
@@ -114,13 +113,6 @@ class CategoryListView(ListView):
             available=True
         )[:8]
         return context
-    
-# shop/views.py
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import redirect
-from django.views.decorators.http import require_POST
 
 @login_required
 @require_POST
@@ -165,7 +157,8 @@ def product_search(request):
     products = Product.objects.filter(
         Q(name__icontains=query) |
         Q(description__icontains=query) |
-        Q(sku__icontains=query),
+        Q(sku__icontains=query) |
+        Q(search_synonyms__icontains=query),
         available=True
     )[:10]
     
@@ -174,17 +167,12 @@ def product_search(request):
         results.append({
             'name': product.name,
             'url': product.get_absolute_url(),
-            'price': str(product.price),
+            'price': str(product.base_price),
             'image_url': product.main_image.url if product.main_image else None,
             'category': product.category.name
         })
     
     return JsonResponse({'results': results})
-
-
-# shop/views.py - добавляем импорт
-from .cart import CartManager
-from django.contrib import messages
 
 def cart_detail(request):
     """Страница корзины"""
@@ -200,14 +188,21 @@ def cart_detail(request):
 
 @require_POST
 def cart_add(request, product_id):
-    """Добавление товара в корзину"""
+    """Добавление товара в корзину - ОБНОВЛЕННАЯ ВЕРСИЯ ДЛЯ ВАРИАНТОВ"""
     try:
+        variant_id = request.POST.get('variant_id')  # Получаем ID варианта
         quantity = int(request.POST.get('quantity', 1))
+        
+        if not variant_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Не выбран вариант товара'
+            })
+        
         cart_manager = CartManager(request)
-        success, message = cart_manager.add(product_id, quantity)
+        success, message = cart_manager.add(variant_id, quantity)
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            # AJAX запрос - возвращаем JSON
             return JsonResponse({
                 'success': success,
                 'message': message,
@@ -215,7 +210,6 @@ def cart_add(request, product_id):
                 'total_price': str(cart_manager.get_total_price())
             })
         else:
-            # Обычный запрос - показываем сообщение и редиректим НАЗАД
             if success:
                 messages.success(request, message)
             else:
@@ -233,34 +227,49 @@ def cart_add(request, product_id):
             return redirect('shop:product_list')
 
 @require_POST
-def cart_update(request, product_id):
-    """Обновление количества товара в корзине - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
-    print(f"DEBUG: cart_update called for product {product_id}")
+def cart_update(request, variant_id):
+    """Обновление количества товара в корзине - ДЛЯ ВАРИАНТОВ"""
+    print(f"DEBUG cart_update: variant_id={variant_id}, POST data: {dict(request.POST)}")
     
     try:
-        quantity = int(request.POST.get('quantity', 1))
-        print(f"DEBUG: quantity = {quantity}")
+        action = request.POST.get('action')
+        current_quantity = int(request.POST.get('current_quantity', 1))
+        
+        # Вычисляем новое количество на основе действия
+        if action == 'increase':
+            quantity = current_quantity + 1
+        elif action == 'decrease':
+            quantity = current_quantity - 1
+        else:
+            # Если действие не распознано, используем переданное количество
+            quantity = int(request.POST.get('quantity', current_quantity))
+        
+        print(f"DEBUG cart_update: action={action}, current_quantity={current_quantity}, new_quantity={quantity}")
         
         cart_manager = CartManager(request)
         
         if quantity <= 0:
-            return cart_remove(request, product_id)
+            return cart_remove(request, variant_id)
         
-        # Используем метод update из CartManager
-        success, message = cart_manager.update(product_id, quantity)
+        success, message = cart_manager.update(variant_id, quantity)
+        
+        print(f"DEBUG cart_update: update result - success={success}, message={message}")
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             item_total = '0'
+            current_quantity = 0
+            
             if success:
                 try:
                     cart_item = CartItem.objects.get(
                         cart=cart_manager.cart,
-                        product_id=product_id
+                        product_variant_id=variant_id
                     )
                     item_total = str(cart_item.total_price)
-                    print(f"DEBUG: item_total = {item_total}")
+                    current_quantity = cart_item.quantity
+                    print(f"DEBUG cart_update: cart_item found - quantity={cart_item.quantity}, total_price={item_total}")
                 except CartItem.DoesNotExist:
-                    print("DEBUG: CartItem not found")
+                    print("DEBUG cart_update: CartItem not found after update")
                     pass
             
             response_data = {
@@ -268,9 +277,11 @@ def cart_update(request, product_id):
                 'message': message,
                 'total_quantity': cart_manager.get_total_quantity(),
                 'total_price': str(cart_manager.get_total_price()),
-                'item_total': item_total
+                'item_total': item_total,
+                'current_quantity': current_quantity
             }
-            print(f"DEBUG: Response data = {response_data}")
+            
+            print(f"DEBUG cart_update: response data = {response_data}")
             return JsonResponse(response_data)
         else:
             if success:
@@ -280,7 +291,7 @@ def cart_update(request, product_id):
             return redirect('shop:cart_detail')
             
     except Exception as e:
-        print(f"DEBUG: Error in cart_update: {e}")
+        print(f"DEBUG cart_update: Error - {str(e)}")
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
@@ -289,13 +300,12 @@ def cart_update(request, product_id):
         else:
             messages.error(request, f'Ошибка: {str(e)}')
             return redirect('shop:cart_detail')
-
 @require_POST
-def cart_remove(request, product_id):
-    """Удаление товара из корзины"""
+def cart_remove(request, variant_id):
+    """Удаление товара из корзины - ДЛЯ ВАРИАНТОВ"""
     try:
         cart_manager = CartManager(request)
-        success, message = cart_manager.remove(product_id)
+        success, message = cart_manager.remove(variant_id)
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -384,13 +394,13 @@ def checkout(request):
             
             order.save()
             
-            # Создаем элементы заказа
+            # Создаем элементы заказа (ОБНОВЛЕНО ДЛЯ ВАРИАНТОВ)
             for cart_item in cart_items:
                 OrderItem.objects.create(
                     order=order,
-                    product=cart_item.product,
+                    product_variant=cart_item.product_variant,  # Используем вариант товара
                     quantity=cart_item.quantity,
-                    price=cart_item.price
+                    price=cart_item.price  # Используем цену из корзины
                 )
             
             # Отправляем уведомление в Telegram
@@ -426,11 +436,10 @@ def order_success(request, order_id):
     try:
         order = Order.objects.get(id=order_id)
         context = {'order': order}
-        return render(request, 'order_success.html', context)  # ⬅️ Добавляем 'shop/'
+        return render(request, 'order_success.html', context)
     except Order.DoesNotExist:
         messages.error(request, "Заказ не найден")
         return redirect('shop:product_list')
-    
 
 def download_order_pdf(request, order_id):
     """Генерация PDF с русскими буквами используя системные шрифты"""
@@ -577,15 +586,15 @@ def download_order_pdf(request, order_id):
     
     p.setFont(font_name, 9)
     
-    # Товары
+    # Товары (ОБНОВЛЕНО ДЛЯ ВАРИАНТОВ)
     for item in order.items.all():
         if y_position < 100:
             p.showPage()
             y_position = height - 50
             p.setFont(font_name, 9)
         
-        # Название товара
-        product_name = item.product.name
+        # Название товара с вариантом
+        product_name = f"{item.product_variant.product.name} - {item.product_variant.name}"
         if len(product_name) > 45:
             product_name = product_name[:42] + "..."
         

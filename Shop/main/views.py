@@ -3,11 +3,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
+from django.urls import reverse
 
 from .models import Category, Product, ProductVariant, ProductImage, Review, Cart, CartItem, Order, OrderItem
 from .cart import CartManager
@@ -26,8 +27,7 @@ from datetime import datetime
 
 class ProductListView(ListView):
     """
-    Представление для списка товаров
-    Особенности: пагинация, фильтрация по категориям, поиск
+    Представление для списка товаров с поддержкой иерархических категорий
     """
     model = Product
     template_name = 'product_list.html'
@@ -37,11 +37,24 @@ class ProductListView(ListView):
     def get_queryset(self):
         queryset = Product.objects.filter(available=True).select_related('category')
         
-        # Фильтрация по категории
-        category_slug = self.kwargs.get('category_slug')
-        if category_slug:
-            category = get_object_or_404(Category, slug=category_slug)
-            queryset = queryset.filter(category=category)
+        # Обработка иерархического пути категории
+        category_path = self.kwargs.get('category_path')
+        if category_path:
+            # Разбиваем путь на части (например: 'phones/apple' -> ['phones', 'apple'])
+            path_parts = category_path.split('/')
+            
+            # Берем последнюю часть как текущую категорию
+            current_slug = path_parts[-1]
+            category = get_object_or_404(Category, slug=current_slug)
+            
+            # Проверяем, что путь соответствует иерархии
+            expected_path = '/'.join([cat.slug for cat in category.get_ancestors(include_self=True)])
+            if expected_path != category_path:
+                raise Http404("Категория не найдена")
+            
+            # Фильтруем товары по категории и всем её подкатегориям
+            categories = category.get_descendants(include_self=True)
+            queryset = queryset.filter(category__in=categories)
         
         # Поиск
         search_query = self.request.GET.get('search')
@@ -57,12 +70,18 @@ class ProductListView(ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.filter(is_active=True)
+        context['categories'] = Category.get_root_categories()
         
-        # Передаем текущую категорию в контекст
-        category_slug = self.kwargs.get('category_slug')
-        if category_slug:
-            context['current_category'] = get_object_or_404(Category, slug=category_slug)
+        # Определяем текущую категорию
+        category_path = self.kwargs.get('category_path')
+        if category_path:
+            current_slug = category_path.split('/')[-1]
+            context['current_category'] = get_object_or_404(Category, slug=current_slug)
+            # Добавляем хлебные крошки
+            context['breadcrumbs'] = context['current_category'].get_breadcrumbs()
+        else:
+            context['current_category'] = None
+            context['breadcrumbs'] = [{'name': 'Все товары', 'url': reverse('shop:product_list')}]
         
         return context
 
@@ -96,19 +115,17 @@ class ProductDetailView(DetailView):
 
 class CategoryListView(ListView):
     """
-    Представление для списка категорий
-    Особенности: древовидная структура, количество товаров
+    Представление для списка категорий с древовидной структурой
     """
     model = Category
     template_name = 'category_list.html'
     context_object_name = 'categories'
     
     def get_queryset(self):
-        return Category.objects.filter(is_active=True)
+        return Category.get_root_categories()
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Добавляем популярные товары для главной страницы категорий
         context['featured_products'] = Product.objects.filter(
             available=True
         )[:8]

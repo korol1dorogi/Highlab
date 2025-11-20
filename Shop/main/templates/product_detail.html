@@ -8,7 +8,9 @@
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'shop:product_list' %}">Главная</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'shop:product_list_by_category' product.category.slug %}">{{ product.category.name }}</a></li>
+        {% for crumb in product.category.get_breadcrumbs %}
+            <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+        {% endfor %}
         <li class="breadcrumb-item active">{{ product.name }}</li>
     </ol>
 </nav>

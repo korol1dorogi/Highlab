@@ -5,58 +5,99 @@
 {% endblock %}
 
 {% block content %}
+<!-- Хлебные крошки -->
+{% if breadcrumbs %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'shop:product_list' %}">Главная</a></li>
+        {% for crumb in breadcrumbs %}
+            {% if forloop.last %}
+            <li class="breadcrumb-item active">{{ crumb.name }}</li>
+            {% else %}
+            <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav>
+{% endif %}
+
 <div class="row">
-    <!-- Сайдбар с категориями -->
+    <!-- Сайдбар с категориями - ОБНОВЛЕННЫЙ ВАРИАНТ С ДРЕВОВИДНОЙ СТРУКТУРОЙ -->
     <div class="col-md-3">
         <div class="card category-sidebar">
-            <div class="card-header">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0"><i class="bi bi-list"></i> Категории</h5>
             </div>
-            <div class="list-group list-group-flush">
+            <div class="card-body">
                 <a href="{% url 'shop:product_list' %}" 
-                   class="list-group-item list-group-item-action {% if not current_category %}active{% endif %}">
-                    Все товары
+                   class="d-block mb-3 p-2 border rounded {% if not current_category %}bg-primary text-white{% else %}bg-light{% endif %} text-decoration-none">
+                    <i class="bi bi-grid-3x3-gap"></i> Все товары
+                    <span class="badge {% if not current_category %}bg-light text-dark{% else %}bg-primary{% endif %} float-end">{{ products.paginator.count }}</span>
                 </a>
-                {% for category in categories %}
-                <a href="{% url 'shop:product_list_by_category' category.slug %}" 
-                   class="list-group-item list-group-item-action {% if current_category and current_category.slug == category.slug %}active{% endif %}">
-                    {{ category.name }}
-                    <span class="badge bg-secondary float-end">{{ category.products.count }}</span>
-                </a>
-                {% endfor %}
+                
+                <div class="categories-tree">
+                    {% for category in categories %}
+                        {% include 'includes/category_node.html' with category=category %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Дополнительная информация -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-truck"></i> Быстрая доставка</h6>
+                <p class="card-text small mb-3">Доставим ваш заказ в течение 2-3 дней</p>
+                
+                <h6 class="card-title"><i class="bi bi-shield-check"></i> Гарантия качества</h6>
+                <p class="card-text small">Гарантия на все товары 12 месяцев</p>
             </div>
         </div>
     </div>
 
     <!-- Основной контент -->
     <div class="col-md-9">
-        <!-- Заголовок -->
+        <!-- Заголовок и информация -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>
-                {% if current_category %}
-                    {{ current_category.name }}
-                {% else %}
-                    Все товары
-                {% endif %}
-            </h1>
-            <div class="text-muted">
-                Найдено товаров: {{ products.paginator.count }}
+            <div>
+                <h1 class="h3 mb-1">
+                    {% if current_category %}
+                        {{ current_category.name }}
+                    {% else %}
+                        Все товары
+                    {% endif %}
+                </h1>
+                <p class="text-muted mb-0">
+                    Найдено товаров: <strong>{{ products.paginator.count }}</strong>
+                    {% if current_category and current_category.parent %}
+                        в категории "{{ current_category.name }}"
+                    {% endif %}
+                </p>
+            </div>
+            
+            <div class="text-muted small">
+                Страница {{ products.number }} из {{ products.paginator.num_pages }}
             </div>
         </div>
 
         <!-- Поисковый запрос -->
         {% if request.GET.search %}
-        <div class="alert alert-info">
-            Результаты поиска для: "<strong>{{ request.GET.search }}</strong>"
-            <a href="{% url 'shop:product_list' %}" class="float-end">Показать все товары</a>
+        <div class="alert alert-info d-flex align-items-center">
+            <i class="bi bi-search me-2"></i>
+            <div class="flex-grow-1">
+                Результаты поиска для: "<strong>{{ request.GET.search }}</strong>"
+            </div>
+            <a href="{% url 'shop:product_list' %}" class="btn btn-sm btn-outline-info">
+                <i class="bi bi-x-circle"></i> Очистить
+            </a>
         </div>
         {% endif %}
 
-        <!-- Сетка товаров - ОБНОВЛЕННАЯ -->
+        <!-- Сетка товаров -->
         {% if products %}
-        <div class="product-grid">  <!-- ⬅️ Заменяем row на product-grid -->
+        <div class="product-grid">
             {% for product in products %}
-            <div class="product-col">  <!-- ⬅️ Добавляем обертку -->
+            <div class="product-col">
                 {% include 'includes/product_card.html' with product=product %}
             </div>
             {% endfor %}
@@ -68,11 +109,49 @@
         {% else %}
         <div class="text-center py-5">
             <i class="bi bi-search display-1 text-muted"></i>
-            <h3 class="text-muted">Товары не найдены</h3>
+            <h3 class="text-muted mt-3">Товары не найдены</h3>
             <p class="text-muted">Попробуйте изменить критерии поиска или выбрать другую категорию</p>
-            <a href="{% url 'shop:product_list' %}" class="btn btn-primary">Вернуться к товарам</a>
+            <div class="mt-4">
+                <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i> Вернуться к товарам
+                </a>
+                <a href="{% url 'shop:category_list' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="bi bi-list"></i> Посмотреть категории
+                </a>
+            </div>
         </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Автоматически раскрываем категории, если есть текущая категория
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/category/')) {
+        // Можно добавить логику для автоматического раскрытия пути к текущей категории
+        console.log('Current category path:', currentPath);
+        
+        // Попробуем найти и раскрыть родительские категории
+        setTimeout(() => {
+            const currentCategoryLinks = document.querySelectorAll(`a[href="${currentPath}"]`);
+            currentCategoryLinks.forEach(link => {
+                let parentCollapse = link.closest('.subcategories.collapse');
+                while (parentCollapse) {
+                    const collapseId = parentCollapse.id;
+                    const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
+                    if (toggleButton && !toggleButton.classList.contains('collapsed')) {
+                        const bsCollapse = new bootstrap.Collapse(parentCollapse, {
+                            toggle: true
+                        });
+                    }
+                    parentCollapse = parentCollapse.parentElement.closest('.subcategories.collapse');
+                }
+            });
+        }, 100);
+    }
+});
+</script>
 {% endblock %}

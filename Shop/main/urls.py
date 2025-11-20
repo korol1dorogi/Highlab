@@ -1,5 +1,5 @@
 # shop/urls.py
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 app_name = 'shop'
@@ -8,10 +8,10 @@ urlpatterns = [
     # Главная страница магазина - список товаров
     path('', views.ProductListView.as_view(), name='product_list'),
     
-    # Товары по категории
-    path('category/<slug:category_slug>/', 
-         views.ProductListView.as_view(), 
-         name='product_list_by_category'),
+    # Товары по иерархической категории (например: category/phones/apple/)
+    re_path(r'^category/(?P<category_path>[\w\/-]+)/$', 
+            views.ProductListView.as_view(), 
+            name='product_list_by_category'),
     
     # Детальная страница товара
     path('product/<slug:slug>/', 

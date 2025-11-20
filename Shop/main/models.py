@@ -3,6 +3,7 @@ from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
 from mptt.models import MPTTModel, TreeForeignKey
+from django.http import Http404
 
 class Category(MPTTModel):
     """
@@ -66,7 +67,33 @@ class Category(MPTTModel):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('shop:product_list_by_category', args=[self.slug])
+        """Генерирует URL с учетом иерархии категорий"""
+        if self.parent:
+            # Строим путь из slug всех предков
+            path = '/'.join([cat.slug for cat in self.get_ancestors(include_self=True)])
+            return reverse('shop:product_list_by_category', args=[path])
+        else:
+            return reverse('shop:product_list_by_category', args=[self.slug])
+
+    def get_all_children(self):
+        """Получить всех потомков категории"""
+        return self.get_descendants(include_self=False)
+    
+    def get_all_products(self):
+        """Получить все товары в категории и её подкатегориях"""
+        from django.db.models import Q
+        categories = self.get_descendants(include_self=True)
+        return Product.objects.filter(category__in=categories, available=True)
+    
+    def get_breadcrumbs(self):
+        """Получить хлебные крошки для категории"""
+        ancestors = self.get_ancestors(include_self=True)
+        return [{'name': cat.name, 'url': cat.get_absolute_url()} for cat in ancestors]
+    
+    @classmethod
+    def get_root_categories(cls):
+        """Получить корневые категории (без родителей)"""
+        return cls.objects.filter(parent=None, is_active=True)
 
 class Product(models.Model):
     """

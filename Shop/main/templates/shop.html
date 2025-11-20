@@ -13,6 +13,111 @@
     
     <!-- Custom CSS -->
     <style>
+        .categories-tree {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .category-node {
+        transition: all 0.3s ease;
+    }
+
+    .category-header {
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .category-header:hover {
+        background: #e9ecef;
+        border-color: #0d6efd !important;
+    }
+
+    .category-header.bg-primary {
+        border-color: #0d6efd !important;
+    }
+
+    .category-header a {
+        color: #495057;
+        font-weight: 500;
+    }
+
+    .category-header a:hover {
+        color: #0d6efd;
+    }
+
+    .category-header.bg-primary a {
+        color: white;
+    }
+
+    .category-header.bg-primary a:hover {
+        color: white;
+        opacity: 0.9;
+    }
+
+    .subcategories {
+        border-left: 2px solid #dee2e6;
+        margin-left: 0.5rem;
+        padding-left: 0.5rem;
+    }
+
+    .toggle-subcategories {
+        transition: all 0.3s ease;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .toggle-subcategories .bi-chevron-down {
+        transition: transform 0.3s ease;
+        font-size: 0.8rem;
+    }
+
+    .toggle-subcategories:not(.collapsed) .bi-chevron-down {
+        transform: rotate(180deg);
+    }
+
+    /* Анимация раскрытия */
+    .collapse {
+        transition: all 0.3s ease;
+    }
+
+    /* Улучшения для сайдбара */
+    .category-sidebar {
+        position: sticky;
+        top: 20px;
+    }
+
+    /* Улучшения для мобильных устройств */
+    @media (max-width: 768px) {
+        .category-header {
+            padding: 0.75rem;
+        }
+        
+        .subcategories {
+            margin-left: 0.25rem;
+            padding-left: 0.25rem;
+        }
+        
+        .categories-tree {
+            max-height: 60vh;
+        }
+        
+        .category-sidebar {
+            position: static;
+            margin-bottom: 2rem;
+        }
+    }
+
+    /* Стили для активных ссылок "Все товары" */
+    .bg-primary.text-white {
+        border-color: #0d6efd !important;
+    }
+        
+        
         /* Уведомления */
         .notification-container {
             position: fixed;

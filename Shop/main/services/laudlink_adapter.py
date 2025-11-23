@@ -3,7 +3,8 @@ import json
 import re
 from decimal import Decimal
 from django.utils.text import slugify
-from main.models import Category, Product, ProductProperty, ProductVariant, ProductImage  # ИЗМЕНИЛИ main.models на shop.models
+from django.db.models import Q
+from main.models import Category, Product, ProductProperty, ProductVariant, ProductImage
 from .importer import download_image_from_url, clean_price
 
 class LaudLinkAdapter:
@@ -54,7 +55,6 @@ class LaudLinkAdapter:
                 # Создаем основную категорию
                 print(category_data['url'])
                 temp_slug = category_data['url'].split('/')[-1]
-                #slug = LaudLinkAdapter.generate_unique_slug(category_data['name'])
                 slug = LaudLinkAdapter.generate_unique_slug(temp_slug)
                 main_category, created = Category.objects.get_or_create(
                     name=category_data['name'],
@@ -87,17 +87,17 @@ class LaudLinkAdapter:
             # Затем создаем подкатегории
             for category_data in categories_data:
                 try:
-                    
                     main_category = Category.objects.get(name=category_data['name'])
                 
                     # Создаем подкатегории
                     for subcategory_data in category_data.get('subcategories', []):
                         temp_slug = subcategory_data['url'].split('/')[-1]
-                        #slug = LaudLinkAdapter.generate_unique_slug(subcategory_data['name'])
                         slug = LaudLinkAdapter.generate_unique_slug(temp_slug)
+                        
+                        # Ищем подкатегорию с учетом родительской категории
                         subcategory, created = Category.objects.get_or_create(
                             name=subcategory_data['name'],
-                            parent=main_category,
+                            parent=main_category,  # Критически важно - указываем родителя
                             defaults={
                                 'slug': slug,
                                 'description': f"Подкатегория {subcategory_data['name']}",
@@ -110,7 +110,7 @@ class LaudLinkAdapter:
                             try:
                                 image_file = download_image_from_url(image_url, subcategory_data['name'])
                                 if image_file:
-                                # Если изображение уже есть, удаляем старое
+                                    # Если изображение уже есть, удаляем старое
                                     if subcategory.image:
                                         subcategory.image.delete(save=False)
                                     subcategory.image.save(image_file.name, image_file, save=True)
@@ -140,31 +140,107 @@ class LaudLinkAdapter:
             traceback.print_exc()
             return None
 
-    # Остальные методы остаются без изменений...
+    @staticmethod
+    def find_correct_category(categories_list):
+        """
+        Находит правильную категорию для товара на основе иерархии
+        С учетом того, что парсер может передавать категории в разном порядке
+        
+        Args:
+            categories_list: список категорий товара (например: ['Dell', 'Системные блоки'])
+        
+        Returns:
+            Category object или None
+        """
+        if not categories_list:
+            return None
+            
+        print(f"Поиск категории для товара по пути: {categories_list}")
+        
+        # Если в списке только одна категория - ищем основную категорию
+        if len(categories_list) == 1:
+            category_name = categories_list[0]
+            try:
+                category = Category.objects.get(name=category_name, parent__isnull=True)
+                print(f"Найдена основная категория: {category.name}")
+                return category
+            except Category.DoesNotExist:
+                print(f"Основная категория '{category_name}' не найдена")
+                return None
+            except Category.MultipleObjectsReturned:
+                print(f"Найдено несколько основных категорий с именем '{category_name}', берем первую")
+                return Category.objects.filter(name=category_name, parent__isnull=True).first()
+        
+        # Если в списке несколько категорий - пробуем разные варианты порядка
+        # Парсер может передавать: ['Dell', 'Системные блоки'] или ['Системные блоки', 'Dell']
+        # Нам нужно определить правильную иерархию
+        
+        # Сначала попробуем стандартный порядок: первая категория - родитель, вторая - ребенок
+        parent_name1 = categories_list[0]
+        child_name1 = categories_list[1]
+        
+        try:
+            # Ищем родительскую категорию
+            parent_category1 = Category.objects.get(name=parent_name1, parent__isnull=True)
+            print(f"Найдена родительская категория (вариант 1): {parent_category1.name}")
+            
+            # Ищем подкатегорию С УЧЕТОМ РОДИТЕЛЯ
+            try:
+                child_category1 = Category.objects.get(name=child_name1, parent=parent_category1)
+                print(f"Найдена подкатегория (вариант 1): {child_category1.name} -> {parent_category1.name}")
+                return child_category1
+            except Category.DoesNotExist:
+                print(f"Подкатегория '{child_name1}' не найдена в родительской категории '{parent_name1}'")
+        except Category.DoesNotExist:
+            print(f"Родительская категория '{parent_name1}' не найдена (вариант 1)")
+        
+        # Пробуем обратный порядок: вторая категория - родитель, первая - ребенок
+        parent_name2 = categories_list[1]
+        child_name2 = categories_list[0]
+        
+        try:
+            # Ищем родительскую категорию
+            parent_category2 = Category.objects.get(name=parent_name2, parent__isnull=True)
+            print(f"Найдена родительская категория (вариант 2): {parent_category2.name}")
+            
+            # Ищем подкатегорию С УЧЕТОМ РОДИТЕЛЯ
+            try:
+                child_category2 = Category.objects.get(name=child_name2, parent=parent_category2)
+                print(f"Найдена подкатегория (вариант 2): {child_category2.name} -> {parent_category2.name}")
+                return child_category2
+            except Category.DoesNotExist:
+                print(f"Подкатегория '{child_name2}' не найдена в родительской категории '{parent_name2}'")
+                # Возвращаем родительскую категорию как fallback
+                return parent_category2
+        except Category.DoesNotExist:
+            print(f"Родительская категория '{parent_name2}' не найдена (вариант 2)")
+        
+        # Если оба варианта не сработали, ищем любую категорию по именам
+        for category_name in categories_list:
+            try:
+                # Сначала ищем как основную категорию
+                category = Category.objects.get(name=category_name, parent__isnull=True)
+                print(f"Найдена основная категория (fallback): {category.name}")
+                return category
+            except Category.DoesNotExist:
+                # Потом ищем как подкатегорию
+                categories = Category.objects.filter(name=category_name)
+                if categories.exists():
+                    category = categories.first()
+                    print(f"Найдена категория (fallback): {category.name}")
+                    return category
+        
+        print("❌ Категория не найдена ни по одному из вариантов")
+        return None
+
     @staticmethod
     def convert_product_data(parser_product_data):
         """
         Конвертирует данные товара из формата парсера в формат для импорта
         """
-        # Определяем категорию
+        # Определяем категорию с учетом иерархии
         categories = parser_product_data.get('categories', [])
-        category = None
-        
-        if categories:
-            # Берем последнюю категорию как самую конкретную
-            category_name = categories[-1] if categories else categories[0] if categories else None
-            if category_name:
-                try:
-                    category = Category.objects.filter(name=category_name).first()
-                except Category.DoesNotExist:
-                    # Если категория не найдена, создаем ее
-                    slug = LaudLinkAdapter.generate_unique_slug(category_name)
-                    category = Category.objects.create(
-                        name=category_name,
-                        slug=slug,
-                        description=f"Категория {category_name}"
-                    )
-                    print(f"Создана новая категория: {category_name}")
+        category = LaudLinkAdapter.find_correct_category(categories)
         
         # Если категория не определена, используем первую доступную
         if not category:
@@ -199,7 +275,7 @@ class LaudLinkAdapter:
     @staticmethod
     def import_product_from_parser_data(parser_product_data):
         """
-        Импорт одного товара из данных парсера
+        Импорт одного товара из данных парсера с правильным определением категории
         """
         try:
             # Конвертируем данные
@@ -238,10 +314,11 @@ class LaudLinkAdapter:
             # Добавляем дополнительные изображения
             image_urls = product_data.get('images', [])
             if image_urls:
+                # Удаляем старые изображения перед добавлением новых
                 product.images.all().delete()
                 
-                for i, image_url in enumerate(image_urls[:10]):
-                    image_file = download_image_from_url(image_url, product_data['name'])
+                for i, image_url in enumerate(image_urls[:10]):  # Ограничиваем 10 изображениями
+                    image_file = download_image_from_url(image_url, f"{product_data['name']}_{i}")
                     if image_file:
                         ProductImage.objects.create(
                             product=product,
@@ -252,7 +329,9 @@ class LaudLinkAdapter:
             
             # Добавляем характеристики
             if product_data.get('properties'):
+                # Удаляем старые характеристики
                 ProductProperty.objects.filter(product=product).delete()
+                
                 for i, (prop_name, prop_value) in enumerate(product_data['properties'].items()):
                     ProductProperty.objects.create(
                         product=product,
@@ -263,19 +342,20 @@ class LaudLinkAdapter:
             
             # Добавляем варианты
             if product_data.get('variants'):
+                # Удаляем старые варианты
+                ProductVariant.objects.filter(product=product).delete()
+                
                 for variant_data in product_data['variants']:
-                    # Фильтруем только настоящие варианты (как в вашем парсере)
+                    # Фильтруем только настоящие варианты
                     if LaudLinkAdapter._is_real_variant(variant_data):
                         variant_id = variant_data.get('variant_id', variant_data.get('name'))
-                        ProductVariant.objects.update_or_create(
+                        ProductVariant.objects.create(
                             product=product,
                             external_id=variant_id,
-                            defaults={
-                                'name': variant_data['name'],
-                                'price': clean_price(variant_data['price']),
-                                'quantity': 10 if product_data['available'] else 0,
-                                'sku': variant_id,
-                            }
+                            name=variant_data['name'],
+                            price=clean_price(variant_data['price']),
+                            quantity=10 if product_data['available'] else 0,
+                            sku=variant_id,
                         )
             
             # Обновляем общее количество
@@ -337,7 +417,7 @@ class LaudLinkAdapter:
     @staticmethod
     def import_products_from_json(json_file_path, limit=None):
         """
-        Импорт товаров из JSON файла парсера
+        Импорт товаров из JSON файла парсера с правильным распределением по категориям
         """
         try:
             with open(json_file_path, 'r', encoding='utf-8') as f:
@@ -361,6 +441,7 @@ class LaudLinkAdapter:
             for i, product_data in enumerate(products_data, 1):
                 try:
                     print(f"Импортируем товар {i}/{len(products_data)}: {product_data.get('name', 'Unknown')}")
+                    print(f"Категории товара: {product_data.get('categories', [])}")
                     
                     product = LaudLinkAdapter.import_product_from_parser_data(product_data)
                     
@@ -376,6 +457,13 @@ class LaudLinkAdapter:
                     error_msg = f"Ошибка импорта '{product_name}': {str(e)}"
                     results['errors'].append(error_msg)
                     print(error_msg)
+            
+            # Статистика по категориям
+            print("\n=== СТАТИСТИКА ИМПОРТА ===")
+            for category in Category.objects.all():
+                product_count = Product.objects.filter(category=category).count()
+                parent_info = f" -> {category.parent.name}" if category.parent else " (основная)"
+                print(f"Категория '{category.name}'{parent_info}: {product_count} товаров")
             
             return results
             

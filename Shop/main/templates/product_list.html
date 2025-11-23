@@ -22,35 +22,37 @@
 {% endif %}
 
 <div class="row">
-    <!-- Сайдбар с категориями - ОБНОВЛЕННЫЙ ВАРИАНТ С ДРЕВОВИДНОЙ СТРУКТУРОЙ -->
+    <!-- Сайдбар с категориями -->
     <div class="col-md-3">
-        <div class="card category-sidebar">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-list"></i> Категории</h5>
-            </div>
-            <div class="card-body">
-                <a href="{% url 'shop:product_list' %}" 
-                   class="d-block mb-3 p-2 border rounded {% if not current_category %}bg-primary text-white{% else %}bg-light{% endif %} text-decoration-none">
-                    <i class="bi bi-grid-3x3-gap"></i> Все товары
-                    <span class="badge {% if not current_category %}bg-light text-dark{% else %}bg-primary{% endif %} float-end">{{ products.paginator.count }}</span>
-                </a>
-                
-                <div class="categories-tree">
-                    {% for category in categories %}
-                        {% include 'includes/category_node.html' with category=category %}
-                    {% endfor %}
+        <div class="sticky-sidebar-container">
+            <div class="card category-sidebar">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-list"></i> Категории</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'shop:product_list' %}" 
+                       class="d-block mb-3 p-2 border rounded {% if not current_category %}bg-primary text-white{% else %}bg-light{% endif %} text-decoration-none">
+                        <i class="bi bi-grid-3x3-gap"></i> Все товары
+                        <span class="badge {% if not current_category %}bg-light text-dark{% else %}bg-primary{% endif %} float-end">{{ products.paginator.count }}</span>
+                    </a>
+                    
+                    <div class="categories-tree">
+                        {% for category in categories %}
+                            {% include 'includes/category_node.html' with category=category %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Дополнительная информация -->
-        <div class="card mt-3">
-            <div class="card-body">
-                <h6 class="card-title"><i class="bi bi-truck"></i> Быстрая доставка</h6>
-                <p class="card-text small mb-3">Доставим ваш заказ в течение 2-3 дней</p>
-                
-                <h6 class="card-title"><i class="bi bi-shield-check"></i> Гарантия качества</h6>
-                <p class="card-text small">Гарантия на все товары 12 месяцев</p>
+    
+            <!-- Дополнительная информация -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-truck"></i> Быстрая доставка</h6>
+                    <p class="card-text small mb-3">Доставим ваш заказ в течение 2-3 дней</p>
+                    
+                    <h6 class="card-title"><i class="bi bi-shield-check"></i> Гарантия качества</h6>
+                    <p class="card-text small">Гарантия на все товары 12 месяцев</p>
+                </div>
             </div>
         </div>
     </div>
@@ -75,9 +77,12 @@
                 </p>
             </div>
             
+            <!-- Информация о странице -->
+            {% if products.paginator.num_pages > 1 %}
             <div class="text-muted small">
                 Страница {{ products.number }} из {{ products.paginator.num_pages }}
             </div>
+            {% endif %}
         </div>
 
         <!-- Поисковый запрос -->
@@ -104,7 +109,9 @@
         </div>
 
         <!-- Пагинация -->
-        {% include 'includes/pagination.html' with page=products %}
+        {% if products.paginator.num_pages > 1 %}
+    {% include 'includes/pagination.html' with page=products %}
+{% endif %}
 
         {% else %}
         <div class="text-center py-5">
@@ -131,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Автоматически раскрываем категории, если есть текущая категория
     const currentPath = window.location.pathname;
     if (currentPath.includes('/category/')) {
-        // Можно добавить логику для автоматического раскрытия пути к текущей категории
         console.log('Current category path:', currentPath);
         
         // Попробуем найти и раскрыть родительские категории

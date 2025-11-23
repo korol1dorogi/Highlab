@@ -43,5 +43,8 @@ urlpatterns = [
     # Оформление заказа
     path('checkout/', views.checkout, name='checkout'),
     path('order/success/<int:order_id>/', views.order_success, name='order_success'),
-    path('order/pdf/<int:order_id>/', views.download_order_pdf, name='download_order_pdf')
+    path('order/pdf/<int:order_id>/', views.download_order_pdf, name='download_order_pdf'),
+
+
+    path('debug/', views.debug_products, name='debug_products'),
 ]

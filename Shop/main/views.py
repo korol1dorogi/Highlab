@@ -34,6 +34,26 @@ class ProductListView(ListView):
     context_object_name = 'products'
     paginate_by = 12
     
+    def get(self, request, *args, **kwargs):
+        print("=== DEBUG ProductListView ===")
+        print(f"Request: {request.GET}")
+        
+        # Получаем queryset
+        queryset = self.get_queryset()
+        print(f"Queryset count: {queryset.count()}")
+        
+        # Применяем пагинацию вручную для отладки
+        paginator = self.get_paginator(queryset, self.paginate_by)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        print(f"Paginator count: {paginator.count}")
+        print(f"Number of pages: {paginator.num_pages}")
+        print(f"Current page: {page_obj.number}")
+        print("=== END DEBUG ===")
+        
+        return super().get(request, *args, **kwargs)
+    
     def get_queryset(self):
         queryset = Product.objects.filter(available=True).select_related('category')
         
@@ -71,6 +91,7 @@ class ProductListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.get_root_categories()
+        context['paginate_by'] = self.paginate_by
         
         # Определяем текущую категорию
         category_path = self.kwargs.get('category_path')
@@ -660,3 +681,26 @@ def download_order_pdf(request, order_id):
     response['Content-Disposition'] = f'attachment; filename="order_{order.id}.pdf"'
     
     return response
+
+def debug_products(request):
+    """Временная функция для отладки"""
+    products = Product.objects.filter(available=True)
+    print(f"Всего товаров: {products.count()}")
+    print(f"Paginate by: {12}")
+    
+    # Принудительно создаем пагинацию
+    from django.core.paginator import Paginator
+    paginator = Paginator(products, 12)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    print(f"Всего страниц: {paginator.num_pages}")
+    print(f"Текущая страница: {page_obj.number}")
+    
+    return render(request, 'product_list.html', {
+        'products': page_obj,
+        'categories': Category.get_root_categories(),
+        'current_category': None,
+        'breadcrumbs': [{'name': 'Все товары', 'url': reverse('shop:product_list')}],
+        'paginate_by': 12
+    })

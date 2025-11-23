@@ -90,6 +90,15 @@ class Category(MPTTModel):
         ancestors = self.get_ancestors(include_self=True)
         return [{'name': cat.name, 'url': cat.get_absolute_url()} for cat in ancestors]
     
+    def get_products_count(self):
+        """Получить общее количество товаров в категории и всех её подкатегориях"""
+        from django.db.models import Q
+        categories = self.get_descendants(include_self=True)
+        return Product.objects.filter(
+            category__in=categories, 
+            available=True
+        ).count()
+    
     @classmethod
     def get_root_categories(cls):
         """Получить корневые категории (без родителей)"""

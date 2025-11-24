@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лаборатория ВТ - Ремонт компьютеров, магазин электроники и стройматериалов | [Ваш город]</title>
-    <meta name="description" content="Профессиональный ремонт компьютеров и электроники в [Ваш город]. Магазин электроники с доставкой по России. Стройматериалы от дистрибьютора. Гарантия качества.">
-    <meta name="keywords" content="ремонт компьютеров [Город], магазин электроники, стройматериалы, умный дом, ремонт ноутбуков, [добавьте 5-10 ключевых фраз]">
+    <title>Лаборатория ВТ - Ремонт компьютеров, магазин электроники и стройматериалов | Курск</title>
+    <meta name="description" content="Профессиональный ремонт компьютеров и электроники в Курске. Магазин электроники с доставкой по России. Стройматериалы от дистрибьютора. Гарантия качества.">
+    <meta name="keywords" content="ремонт компьютеров Курск, магазин электроники, стройматериалы, умный дом, ремонт ноутбуков, компьютерный сервис Курск, купить электронику, строительные материалы Курск">
     
     <!-- Canonical URL -->
     <link rel="canonical" href="https://лаборатория-вт.рф/" />
@@ -24,16 +24,16 @@
         "name": "Лаборатория ВТ",
         "description": "Ремонт компьютеров и электроники, магазин электроники и стройматериалов",
         "url": "https://лаборатория-вт.рф/",
-        "telephone": "+7-XXX-XXX-XX-XX",
+        "telephone": "+7-951-326-60-10",
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "[Ваш город, ул. Примерная, д. 1]",
-            "addressLocality": "[Ваш город]",
+            "streetAddress": "Курск, ул. Суворовская, 103 Б",
+            "addressLocality": "Курск",
             "addressCountry": "RU"
         },
         "openingHours": "Mo-Fr 09:00-18:00",
-        "areaServed": "[Ваш город и область]",
-        "serviceType": "Ремонт компьютеров, ремонт электроники, умные дома"
+        "areaServed": "Курск, Курская область",
+        "serviceType": "Ремонт компьютеров, ремонт электроники, умные дома, промышленное программирование"
     }
     </script>
 
@@ -128,6 +128,10 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             transition: transform 0.3s, box-shadow 0.3s;
             text-align: center;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            cursor: pointer;
         }
 
         .service-card:hover {
@@ -161,6 +165,7 @@
             text-decoration: none;
             font-weight: bold;
             transition: background 0.3s;
+            pointer-events: none; /* Предотвращаем конфликт кликов с основной ссылкой карточки */
         }
 
         .btn:hover {
@@ -197,32 +202,53 @@
         footer {
             background: #2c3e50;
             color: #fff;
-            padding: 2rem 0;
+            padding: 3rem 0 2rem;
         }
 
         .footer-content {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 2rem;
             margin-bottom: 2rem;
         }
 
-        .footer-contacts, .footer-social {
+        .footer-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
         }
 
-        .footer-contacts h3, .footer-social h3 {
+        .footer-column h3 {
             margin-bottom: 1.5rem;
             color: #fff;
+            font-size: 1.2rem;
+            position: relative;
+            padding-bottom: 0.5rem;
         }
 
-        .phone-numbers {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+        .footer-column h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 2px;
+            background: #3498db;
         }
 
-        .phone-item {
+        .contact-person {
+            margin-bottom: 1.5rem;
+        }
+
+        .person-name {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .phone-number-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -231,8 +257,28 @@
         }
 
         .phone-number {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
+        }
+
+        .contact-description {
+            font-size: 0.85rem;
+            color: #ddd;
+            line-height: 1.4;
+            margin-top: 0.5rem;
+        }
+
+        .address-info {
+            text-align: center;
+            margin: 2rem 0;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+        }
+
+        .address-info p {
+            margin-bottom: 0.5rem;
+            color: #ccc;
         }
 
         .telegram-btn {
@@ -241,8 +287,8 @@
             justify-content: center;
             background: #0088cc;
             color: white;
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             text-decoration: none;
             transition: background 0.3s, transform 0.2s;
@@ -254,9 +300,16 @@
         }
 
         .telegram-btn svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             fill: white;
+        }
+
+        .social-links {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
         }
 
         .vk-link {
@@ -266,11 +319,11 @@
             gap: 0.5rem;
             background: #4a76a8;
             color: white;
-            padding: 0.8rem 1.5rem;
+            padding: 0.6rem 1.2rem;
             border-radius: 5px;
             text-decoration: none;
             transition: background 0.3s, transform 0.2s;
-            margin-top: 1rem;
+            font-size: 0.9rem;
         }
 
         .vk-link:hover {
@@ -279,8 +332,8 @@
         }
 
         .vk-link svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             fill: white;
         }
 
@@ -288,6 +341,9 @@
             text-align: center;
             padding-top: 1.5rem;
             border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #ccc;
         }
 
         /* Хлебные крошки */
@@ -303,6 +359,13 @@
         }
 
         /* Адаптивность */
+        @media (max-width: 1024px) {
+            .footer-content {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2rem;
+            }
+        }
+
         @media (max-width: 768px) {
             .header-inner {
                 flex-direction: column;
@@ -328,9 +391,10 @@
             
             .footer-content {
                 grid-template-columns: 1fr;
+                gap: 2.5rem;
             }
             
-            .phone-item {
+            .phone-number-wrapper {
                 flex-direction: column;
                 gap: 0.5rem;
             }
@@ -355,50 +419,45 @@
                 <a href="/" class="logo">Лаборатория ВТ</a>
                 <ul class="nav-menu">
                     <li><a href="#main">Главная</a></li>
-                    <li><a href="/uslugi/">Услуги</a></li>
-                    <li><a href="/electronic-market/">Электроника</a></li>
-                    <li><a href="/building-market/">Стройматериалы</a></li>
+                    <li><a href="/service/">Услуги</a></li>
+                    <li><a href="/shop_electronic/">Электроника</a></li>
+                    <li><a href="/shop_building/">Стройматериалы</a></li>
                     <li><a href="#contacts">Контакты</a></li>
                 </ul>
             </div>
         </div>
     </header>
 
-    <!-- Хлебные крошки -->
-    <nav class="breadcrumb container">
-        <a href="/">Главная</a>
-    </nav>
-
     <!-- Главный экран с тремя направлениями -->
     <main>
         <section class="hero" id="main">
             <div class="container">
-                <h1>Комплексные решения: от ремонта компьютеров до стройматериалов в [Ваш город]</h1>
+                <h1>Комплексные решения: от ремонта компьютеров до стройматериалов в Курске</h1>
                 
                 <div class="services-grid">
                     <!-- Карточка 1: Услуги -->
-                    <article class="service-card card-services">
+                    <a href="/service/" class="service-card card-services">
                         <div class="card-icon">🔧</div>
                         <h2>Услуги мастерской</h2>
-                        <p>Ремонт компьютеров и электроники, настройка умных домов и котельных, прокладка электрики в Вашем городе. Профессионально и с гарантией.</p>
-                        <a href="/service/" class="btn">Все услуги</a>
-                    </article>
+                        <p>Ремонт компьютеров и электроники, настройка умных домов и котельных, прокладка электрики. Профессионально и с гарантией.</p>
+                        <span class="btn">Все услуги</span>
+                    </a>
                     
                     <!-- Карточка 2: Электроника -->
-                    <article class="service-card card-electronics">
+                    <a href="/shop_electronic/" class="service-card card-electronics">
                         <div class="card-icon">📱</div>
                         <h2>Магазин электроники</h2>
-                        <p>Новая и б/у электроника: смартфоны, ноутбуки, планшеты, гаджеты. Доставка по всей России. Гарантия качества.</p>
-                        <a href="/shop_electronic/" class="btn">В магазин</a>
-                    </article>
+                        <p>Новая и б/у электроника: смартфоны, ноутбуки, планшеты, гаджеты, аксессуары. Доставка по всей России. Гарантия качества.</p>
+                        <span class="btn">В магазин</span>
+                    </a>
                     
                     <!-- Карточка 3: Стройматериалы -->
-                    <article class="service-card card-building">
+                    <a href="/shop_building/" class="service-card card-building">
                         <div class="card-icon">🏗️</div>
                         <h2>Стройматериалы</h2>
                         <p>Лакокрасочные материалы и товары для строительства от ведущих производителей. Выгодные цены от дистрибьютора.</p>
-                        <a href="/shop_building/" class="btn">В магазин</a>
-                    </article>
+                        <span class="btn">В магазин</span>
+                    </a>
                 </div>
             </div>
         </section>
@@ -432,26 +491,50 @@
     <footer id="contacts">
         <div class="container">
             <div class="footer-content">
-                <div class="footer-contacts">
-                    <h3>Контакты</h3>
-                    <div class="phone-numbers">
-                        <div class="phone-item">
-                            <span class="phone-number">+7 (920) 264-54-16</span>
-                            <a href="https://t.me/your_telegram" class="telegram-btn" aria-label="Написать в Telegram">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
-                                </svg>
-                            </a>
-                        </div>
-                        <div class="phone-item">
+                <!-- Колонка 1: Общие контакты -->
+                <div class="footer-column">
+                    <h3>Общие вопросы</h3>
+                    <div class="contact-person">
+                        <div class="person-name">Артур Валерьевич</div>
+                        <div class="phone-number-wrapper">
                             <span class="phone-number">+7 (951) 326-60-10</span>
-                            <a href="https://t.me/your_telegram2" class="telegram-btn" aria-label="Написать в Telegram">
+                            <a href="https://t.me/LaboratoryVT" class="telegram-btn" aria-label="Написать в Telegram">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
                                 </svg>
                             </a>
                         </div>
-                        <div class="phone-item">
+                        <div class="contact-description">
+                            Консультации, запись, подбор техники, общие вопросы
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Колонка 2: Промышленная автоматизация -->
+                <div class="footer-column">
+                    <h3>Автоматизация</h3>
+                    <div class="contact-person">
+                        <div class="person-name">Кирилл Валерьевич</div>
+                        <div class="phone-number-wrapper">
+                            <span class="phone-number">+7 (920) 264-54-16</span>
+                            <a href="https://t.me/baykkstu" class="telegram-btn" aria-label="Написать в Telegram">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="contact-description">
+                            Промышленная автоматизация, обслуживание и модернизация объектов
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Колонка 3: Разработка ПО -->
+                <div class="footer-column">
+                    <h3>Разработка ПО</h3>
+                    <div class="contact-person">
+                        <div class="person-name">Дмитрий Артурович</div>
+                        <div class="phone-number-wrapper">
                             <span class="phone-number">+7 (XXX) XXX-XX-XX</span>
                             <a href="https://t.me/your_telegram3" class="telegram-btn" aria-label="Написать в Telegram">
                                 <svg viewBox="0 0 24 24">
@@ -459,21 +542,31 @@
                                 </svg>
                             </a>
                         </div>
+                        <div class="contact-description">
+                            Разработка программного обеспечения, создание сайтов, программные решения
+                        </div>
                     </div>
-                    <p>Адрес: [Ваш город, ул. Примерная, д. 1]</p>
-                    <p>Email: info@лаборатория-вт.рф</p>
                 </div>
                 
-                <div class="footer-social">
-                    <h3>Мы в соцсетях</h3>
-                    <p>Подписывайтесь на наши новости и акции</p>
-                    <a href="https://vk.com/your_group" class="vk-link">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6.344 16.141c-.333.369-.75.627-1.253.773-.502.147-1.457.221-2.737.221-1.556 0-2.583-.221-3.082-.663-.499-.442-.748-1.18-.748-2.215 0-.28.014-.7.043-1.26.029-.56.043-.896.043-1.007h-1.614v-1.541c.369-.112.8-.295 1.294-.548.494-.253.876-.511 1.146-.773.27-.262.494-.574.672-.935.178-.361.267-.739.267-1.134 0-.533-.126-.967-.379-1.302-.252-.335-.709-.502-1.369-.502-.448 0-.851.103-1.209.308-.358.205-.627.464-.807.776-.18.312-.27.633-.27.963 0 .262.075.476.224.642.149.166.355.249.618.249.14 0 .27-.028.388-.084.119-.056.224-.14.315-.252.091-.112.177-.252.257-.42.08-.168.169-.357.267-.567.098-.21.238-.378.42-.504.182-.126.434-.189.756-.189.364 0 .644.112.84.336.196.224.294.533.294.927 0 .411-.112.812-.336 1.203-.224.392-.504.733-.84 1.023-.336.29-.686.533-1.05.728-.364.195-.672.341-.924.437v.063c.56.14 1.023.355 1.386.644.364.289.644.657.84 1.105.196.448.294.973.294 1.575 0 .785-.182 1.389-.546 1.812-.364.423-.889.634-1.575.634-.533 0-.994-.112-1.386-.336-.392-.224-.714-.518-.966-.882l.756-.756c.224.308.491.546.802.714.31.168.658.252 1.043.252.392 0 .709-.112.952-.336.243-.224.364-.523.364-.896 0-.224-.042-.427-.126-.609-.084-.182-.21-.343-.378-.483-.168-.14-.364-.257-.588-.35-.224-.093-.455-.161-.693-.203l-1.386-.315c-.56-.112-1.033-.301-1.418-.567-.385-.266-.577-.665-.577-1.197 0-.476.154-.869.462-1.179.308-.31.714-.465 1.218-.465.476 0 .868.112 1.176.336.308.224.532.511.672.861l-1.134.588c-.084-.196-.196-.357-.336-.483-.14-.126-.308-.224-.504-.294-.196-.07-.399-.105-.609-.105-.252 0-.462.063-.63.189-.168.126-.252.294-.252.504 0 .168.063.308.189.42.126.112.287.21.483.294.196.084.413.154.651.21.238.056.469.112.693.168l1.386.315c.616.14 1.106.385 1.47.735.364.35.546.812.546 1.386 0 .533-.182.973-.546 1.323z"/>
-                        </svg>
-                        Наша группа ВКонтакте
-                    </a>
+                <!-- Колонка 4: Соцсети -->
+                <div class="footer-column">
+                    <h3>Социальные сети</h3>
+                    <div class="social-links">
+                        <p style="font-size: 0.9rem; margin-bottom: 1rem;">Подписывайтесь на наши новости и акции</p>
+                        <a href="https://vk.com/your_group" class="vk-link">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6.344 16.141c-.333.369-.75.627-1.253.773-.502.147-1.457.221-2.737.221-1.556 0-2.583-.221-3.082-.663-.499-.442-.748-1.18-.748-2.215 0-.28.014-.7.043-1.26.029-.56.043-.896.043-1.007h-1.614v-1.541c.369-.112.8-.295 1.294-.548.494-.253.876-.511 1.146-.773.27-.262.494-.574.672-.935.178-.361.267-.739.267-1.134 0-.533-.126-.967-.379-1.302-.252-.335-.709-.502-1.369-.502-.448 0-.851.103-1.209.308-.358.205-.627.464-.807.776-.18.312-.27.633-.27.963 0 .262.075.476.224.642.149.166.355.249.618.249.14 0 .27-.028.388-.084.119-.056.224-.14.315-.252.091-.112.177-.252.257-.42.08-.168.169-.357.267-.567.098-.21.238-.378.42-.504.182-.126.434-.189.756-.189.364 0 .644.112.84.336.196.224.294.533.294.927 0 .411-.112.812-.336 1.203-.224.392-.504.733-.84 1.023-.336.29-.686.533-1.05.728-.364.195-.672.341-.924.437v.063c.56.14 1.023.355 1.386.644.364.289.644.657.84 1.105.196.448.294.973.294 1.575 0 .785-.182 1.389-.546 1.812-.364.423-.889.634-1.575.634-.533 0-.994-.112-1.386-.336-.392-.224-.714-.518-.966-.882l.756-.756c.224.308.491.546.802.714.31.168.658.252 1.043.252.392 0 .709-.112.952-.336.243-.224.364-.523.364-.896 0-.224-.042-.427-.126-.609-.084-.182-.21-.343-.378-.483-.168-.14-.364-.257-.588-.35-.224-.093-.455-.161-.693-.203l-1.386-.315c-.56-.112-1.033-.301-1.418-.567-.385-.266-.577-.665-.577-1.197 0-.476.154-.869.462-1.179.308-.31.714-.465 1.218-.465.476 0 .868.112 1.176.336.308.224.532.511.672.861l-1.134.588c-.084-.196-.196-.357-.336-.483-.14-.126-.308-.224-.504-.294-.196-.07-.399-.105-.609-.105-.252 0-.462.063-.63.189-.168.126-.252.294-.252.504 0 .168.063.308.189.42.126.112.287.21.483.294.196.084.413.154.651.21.238.056.469.112.693.168l1.386.315c.616.14 1.106.385 1.47.735.364.35.546.812.546 1.386 0 .533-.182.973-.546 1.323z"/>
+                            </svg>
+                            ВКонтакте
+                        </a>
+                    </div>
                 </div>
+            </div>
+            
+            <!-- Адрес и email по центру -->
+            <div class="address-info">
+                <p>Адрес: Курск, ул. Суворовская, 103 Б</p>
+                <p>Email: info@лаборатория-вт.рф</p>
             </div>
             
             <div class="copyright">

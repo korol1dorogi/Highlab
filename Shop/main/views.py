@@ -9,6 +9,8 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.urls import reverse
+from django.db.models import Min, Max
+from django.db.models.functions import Coalesce
 
 from .models import Category, Product, ProductVariant, ProductImage, Review, Cart, CartItem, Order, OrderItem
 from .cart import CartManager
@@ -25,86 +27,155 @@ from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from datetime import datetime
 
-class ProductListView(ListView):
+# shop/views.py
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+def product_list(request, category_path=None):
     """
-    Представление для списка товаров с поддержкой иерархических категорий
+    Функциональное представление для списка товаров с фильтрацией и сортировкой
     """
-    model = Product
-    template_name = 'product_list.html'
-    context_object_name = 'products'
-    paginate_by = 12
+    # Базовый queryset
+    queryset = Product.objects.filter(available=True).select_related('category')
     
-    def get(self, request, *args, **kwargs):
-        print("=== DEBUG ProductListView ===")
-        print(f"Request: {request.GET}")
-        
-        # Получаем queryset
-        queryset = self.get_queryset()
-        print(f"Queryset count: {queryset.count()}")
-        
-        # Применяем пагинацию вручную для отладки
-        paginator = self.get_paginator(queryset, self.paginate_by)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        
-        print(f"Paginator count: {paginator.count}")
-        print(f"Number of pages: {paginator.num_pages}")
-        print(f"Current page: {page_obj.number}")
-        print("=== END DEBUG ===")
-        
-        return super().get(request, *args, **kwargs)
+    # Обработка категории
+    current_category = None
+    breadcrumbs = [{'name': 'Все товары', 'url': reverse('shop:product_list')}]
     
-    def get_queryset(self):
-        queryset = Product.objects.filter(available=True).select_related('category')
+    if category_path:
+        path_parts = category_path.split('/')
+        current_slug = path_parts[-1]
+        current_category = get_object_or_404(Category, slug=current_slug)
         
-        # Обработка иерархического пути категории
-        category_path = self.kwargs.get('category_path')
-        if category_path:
-            # Разбиваем путь на части (например: 'phones/apple' -> ['phones', 'apple'])
-            path_parts = category_path.split('/')
-            
-            # Берем последнюю часть как текущую категорию
-            current_slug = path_parts[-1]
-            category = get_object_or_404(Category, slug=current_slug)
-            
-            # Проверяем, что путь соответствует иерархии
-            expected_path = '/'.join([cat.slug for cat in category.get_ancestors(include_self=True)])
-            if expected_path != category_path:
-                raise Http404("Категория не найдена")
-            
-            # Фильтруем товары по категории и всем её подкатегориям
-            categories = category.get_descendants(include_self=True)
-            queryset = queryset.filter(category__in=categories)
+        # Проверяем путь
+        expected_path = '/'.join([cat.slug for cat in current_category.get_ancestors(include_self=True)])
+        if expected_path != category_path:
+            raise Http404("Категория не найдена")
         
-        # Поиск
-        search_query = self.request.GET.get('search')
-        if search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=search_query) |
-                Q(description__icontains=search_query) |
-                Q(sku__icontains=search_query) |
-                Q(search_synonyms__icontains=search_query)
-            )
+        # Фильтруем товары
+        categories = current_category.get_descendants(include_self=True)
+        queryset = queryset.filter(category__in=categories)
         
-        return queryset
+        # Хлебные крошки
+        breadcrumbs = current_category.get_breadcrumbs()
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['categories'] = Category.get_root_categories()
-        context['paginate_by'] = self.paginate_by
-        
-        # Определяем текущую категорию
-        category_path = self.kwargs.get('category_path')
-        if category_path:
-            current_slug = category_path.split('/')[-1]
-            context['current_category'] = get_object_or_404(Category, slug=current_slug)
-            # Добавляем хлебные крошки
-            context['breadcrumbs'] = context['current_category'].get_breadcrumbs()
+    # Поиск
+    search_query = request.GET.get('search')
+    if search_query and search_query != 'None':  # Фиксим проблему с "None"
+        queryset = queryset.filter(
+            Q(name__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(sku__icontains=search_query) |
+            Q(search_synonyms__icontains=search_query)
+        )
+    
+    # ФИЛЬТРАЦИЯ ПО ЦЕНЕ - УПРОЩЕННАЯ РАБОЧАЯ ВЕРСИЯ
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    price_mode = request.GET.get('price_mode', 'strict')
+    
+    # Сначала аннотируем минимальную цену вариантов
+    queryset = queryset.annotate(
+        min_variant_price=Min('variants__price')
+    )
+    
+    # Для фильтрации используем эффективную цену
+    if min_price:
+        try:
+            min_price_val = float(min_price)
+            if price_mode == 'smart':
+                # УМНЫЙ РЕЖИМ: уменьшаем минимальную цену на 10%
+                min_price_val = max(0, min_price_val * 0.9)  # Защита от отрицательных цен
+            queryset = queryset.filter(base_price__gte=min_price_val)
+        except (ValueError, TypeError):
+            pass
+    
+    if max_price:
+        try:
+            max_price = float(max_price)
+            if price_mode == 'smart':
+                expanded_max = max_price * 1.1
+                queryset = queryset.filter(
+                    Q(min_variant_price__lte=expanded_max) | 
+                    Q(min_variant_price__isnull=True, base_price__lte=expanded_max)
+                )
+            else:
+                queryset = queryset.filter(
+                    Q(min_variant_price__lte=max_price) | 
+                    Q(min_variant_price__isnull=True, base_price__lte=max_price)
+                )
+        except (ValueError, TypeError):
+            pass
+    
+    # СОРТИРОВКА - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    sort = request.GET.get('sort', 'default')
+    
+    if sort in ['price_asc', 'price_desc']:
+        # Для сортировки по цене используем эффективную цену
+        queryset = queryset.annotate(
+            effective_price=Coalesce('min_variant_price', 'base_price')
+        )
+        if sort == 'price_asc':
+            queryset = queryset.order_by('effective_price')
         else:
-            context['current_category'] = None
-            context['breadcrumbs'] = [{'name': 'Все товары', 'url': reverse('shop:product_list')}]
-        
-        return context
+            queryset = queryset.order_by('-effective_price')
+    else:
+        sort_mapping = {
+            'default': '-created',
+            'name_asc': 'name',
+            'name_desc': '-name',
+            'popular': '-total_quantity',
+        }
+        order_by = sort_mapping.get(sort, '-created')
+        queryset = queryset.order_by(order_by)
+    
+    # ПАГИНАЦИЯ
+    paginate_by = 12
+    paginator = Paginator(queryset, paginate_by)
+    page_number = request.GET.get('page', 1)
+    
+    try:
+        products = paginator.page(page_number)
+    except PageNotAnInteger:
+        products = paginator.page(1)
+    except EmptyPage:
+        products = paginator.page(paginator.num_pages)
+    
+    # Получаем диапазон цен для всех товаров (для отображения в форме)
+    price_range = Product.objects.filter(available=True).annotate(
+        effective_price=Coalesce(Min('variants__price'), 'base_price')
+    ).aggregate(
+        min_price=Min('effective_price'),
+        max_price=Max('effective_price')
+    )
+    
+    # Отладочная информация
+    debug_info = {
+        'total_products': Product.objects.filter(available=True).count(),
+        'filtered_products': queryset.count(),
+        'min_price_param': min_price,
+        'max_price_param': max_price,
+        'sort_param': sort,
+        'search_param': search_query,
+    }
+    debug_info = None
+    context = {
+        'products': products,
+        'categories': Category.get_root_categories(),
+        'current_category': current_category,
+        'breadcrumbs': breadcrumbs,
+        'paginate_by': paginate_by,
+        'price_range': price_range,
+        'current_filters': {
+            'min_price': min_price,
+            'max_price': max_price,
+            'price_mode': price_mode,
+            'sort': sort,
+            'search': search_query,
+        },
+        'debug': debug_info
+    }
+    
+    return render(request, 'product_list.html', context)
 
 class ProductDetailView(DetailView):
     """

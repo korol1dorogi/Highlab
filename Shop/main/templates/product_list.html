@@ -20,7 +20,17 @@
     </ol>
 </nav>
 {% endif %}
-
+<!-- Добавьте этот блок после заголовка для отладки -->
+{% if debug %}
+<div class="alert alert-warning">
+    <h6>Отладочная информация:</h6>
+    <p>Всего товаров в базе: {{ debug.total_products }}</p>
+    <p>Товаров после фильтров: {{ debug.filtered_products }}</p>
+    <p>Min price: {{ current_filters.min_price }}</p>
+    <p>Max price: {{ current_filters.max_price }}</p>
+    <p>Sort: {{ current_filters.sort }}</p>
+</div>
+{% endif %}
 <div class="row">
     <!-- Сайдбар с категориями -->
     <div class="col-md-3">
@@ -58,77 +68,195 @@
     </div>
 
     <!-- Основной контент -->
-    <div class="col-md-9">
-        <!-- Заголовок и информация -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h3 mb-1">
-                    {% if current_category %}
-                        {{ current_category.name }}
-                    {% else %}
-                        Все товары
-                    {% endif %}
-                </h1>
-                <p class="text-muted mb-0">
-                    Найдено товаров: <strong>{{ products.paginator.count }}</strong>
-                    {% if current_category and current_category.parent %}
-                        в категории "{{ current_category.name }}"
-                    {% endif %}
-                </p>
-            </div>
-            
-            <!-- Информация о странице -->
-            {% if products.paginator.num_pages > 1 %}
-            <div class="text-muted small">
-                Страница {{ products.number }} из {{ products.paginator.num_pages }}
-            </div>
-            {% endif %}
+<!-- Основной контент -->
+<div class="col-md-9">
+    <!-- Заголовок и информация -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                {% if current_category %}
+                    {{ current_category.name }}
+                {% else %}
+                    Все товары
+                {% endif %}
+            </h1>
+            <p class="text-muted mb-0">
+                Найдено товаров: <strong>{{ products.paginator.count }}</strong>
+                {% if current_category and current_category.parent %}
+                    в категории "{{ current_category.name }}"
+                {% endif %}
+            </p>
         </div>
-
-        <!-- Поисковый запрос -->
-        {% if request.GET.search %}
-        <div class="alert alert-info d-flex align-items-center">
-            <i class="bi bi-search me-2"></i>
-            <div class="flex-grow-1">
-                Результаты поиска для: "<strong>{{ request.GET.search }}</strong>"
-            </div>
-            <a href="{% url 'shop:product_list' %}" class="btn btn-sm btn-outline-info">
-                <i class="bi bi-x-circle"></i> Очистить
-            </a>
-        </div>
-        {% endif %}
-
-        <!-- Сетка товаров -->
-        {% if products %}
-        <div class="product-grid">
-            {% for product in products %}
-            <div class="product-col">
-                {% include 'includes/product_card.html' with product=product %}
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Пагинация -->
+        
+        <!-- Информация о странице -->
         {% if products.paginator.num_pages > 1 %}
-    {% include 'includes/pagination.html' with page=products %}
-{% endif %}
-
-        {% else %}
-        <div class="text-center py-5">
-            <i class="bi bi-search display-1 text-muted"></i>
-            <h3 class="text-muted mt-3">Товары не найдены</h3>
-            <p class="text-muted">Попробуйте изменить критерии поиска или выбрать другую категорию</p>
-            <div class="mt-4">
-                <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
-                    <i class="bi bi-arrow-left"></i> Вернуться к товарам
-                </a>
-                <a href="{% url 'shop:category_list' %}" class="btn btn-outline-secondary ms-2">
-                    <i class="bi bi-list"></i> Посмотреть категории
-                </a>
-            </div>
+        <div class="text-muted small">
+            Страница {{ products.number }} из {{ products.paginator.num_pages }}
         </div>
         {% endif %}
     </div>
+
+    <!-- БЛОК ФИЛЬТРОВ И СОРТИРОВКИ -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" id="filter-form" class="row g-3 align-items-end">
+                <!-- Скрытые поля для сохранения поиска и категории -->
+                {% if request.GET.search %}
+                <input type="hidden" name="search" value="{{ request.GET.search }}">
+                {% endif %}
+                
+                <!-- Фильтр по цене -->
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Цена</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" 
+                               name="min_price" 
+                               class="form-control" 
+                               placeholder="От"
+                               value="{{ request.GET.min_price|default:'' }}"
+                               min="0">
+                        <span class="input-group-text">-</span>
+                        <input type="number" 
+                               name="max_price" 
+                               class="form-control" 
+                               placeholder="До"
+                               value="{{ request.GET.max_price|default:'' }}"
+                               min="0">
+                    </div>
+                    {% if price_range.min_price and price_range.max_price %}
+                    <div class="form-text">
+                        Диапазон: {{ price_range.min_price|floatformat:0 }} - {{ price_range.max_price|floatformat:0 }} ₽
+                    </div>
+                    {% endif %}
+                </div>
+    
+                <!-- Режим фильтрации цены -->
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Режим фильтрации</label>
+                    <select name="price_mode" class="form-select form-select-sm">
+                        <option value="strict" {% if request.GET.price_mode == 'strict' or not request.GET.price_mode %}selected{% endif %}>
+                            Строгий
+                        </option>
+                        <option value="smart" {% if request.GET.price_mode == 'smart' %}selected{% endif %}>
+                            Интеллектуальный (±10%)
+                        </option>
+                    </select>
+                </div>
+    
+                <!-- Сортировка -->
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Сортировка</label>
+                    <select name="sort" class="form-select form-select-sm">
+                        <option value="default" {% if request.GET.sort == 'default' or not request.GET.sort %}selected{% endif %}>
+                            По умолчанию
+                        </option>
+                        <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>
+                            Цена по возрастанию
+                        </option>
+                        <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>
+                            Цена по убыванию
+                        </option>
+                        <option value="name_asc" {% if request.GET.sort == 'name_asc' %}selected{% endif %}>
+                            Название А-Я
+                        </option>
+                        <option value="name_desc" {% if request.GET.sort == 'name_desc' %}selected{% endif %}>
+                            Название Я-А
+                        </option>
+                        <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>
+                            По популярности
+                        </option>
+                    </select>
+                </div>
+    
+                <!-- Кнопки -->
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 mb-1">
+                        <i class="bi bi-funnel"></i> Применить
+                    </button>
+                    <a href="{% if current_category %}{{ current_category.get_absolute_url }}{% else %}{% url 'shop:product_list' %}{% endif %}" 
+                       class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="bi bi-arrow-clockwise"></i> Сбросить
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Активные фильтры -->
+    {% if current_filters.min_price or current_filters.max_price or current_filters.sort != 'default' %}
+    <div class="alert alert-info py-2 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Активные фильтры:</strong>
+                {% if current_filters.min_price or current_filters.max_price %}
+                <span class="badge bg-primary ms-2">
+                    Цена: 
+                    {% if current_filters.min_price %}{{ current_filters.min_price }} ₽{% endif %}
+                    {% if current_filters.min_price and current_filters.max_price %}-{% endif %}
+                    {% if current_filters.max_price %}{{ current_filters.max_price }} ₽{% endif %}
+                    ({{ current_filters.price_mode }})
+                </span>
+                {% endif %}
+                {% if current_filters.sort != 'default' %}
+                <span class="badge bg-secondary ms-2">
+                    Сортировка: 
+                    {% if current_filters.sort == 'price_asc' %}По возрастанию цены{% endif %}
+                    {% if current_filters.sort == 'price_desc' %}По убыванию цены{% endif %}
+                    {% if current_filters.sort == 'name_asc' %}А-Я{% endif %}
+                    {% if current_filters.sort == 'name_desc' %}Я-А{% endif %}
+                    {% if current_filters.sort == 'popular' %}По популярности{% endif %}
+                </span>
+                {% endif %}
+            </div>
+            <a href="{% if current_category %}{{ current_category.get_absolute_url }}{% else %}{% url 'shop:product_list' %}{% endif %}" 
+               class="btn-close" aria-label="Очистить фильтры"></a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Поисковый запрос -->
+    {% if request.GET.search %}
+    <div class="alert alert-info d-flex align-items-center">
+        <i class="bi bi-search me-2"></i>
+        <div class="flex-grow-1">
+            Результаты поиска для: "<strong>{{ request.GET.search }}</strong>"
+        </div>
+        <a href="{% url 'shop:product_list' %}" class="btn btn-sm btn-outline-info">
+            <i class="bi bi-x-circle"></i> Очистить
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Сетка товаров -->
+    {% if products %}
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-col">
+            {% include 'includes/product_card.html' with product=product %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    {% if products.paginator.num_pages > 1 %}
+        {% include 'includes/pagination.html' with page=products %}
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-search display-1 text-muted"></i>
+        <h3 class="text-muted mt-3">Товары не найдены</h3>
+        <p class="text-muted">Попробуйте изменить критерии поиска или выбрать другую категорию</p>
+        <div class="mt-4">
+            <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Вернуться к товарам
+            </a>
+            <a href="{% url 'shop:category_list' %}" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-list"></i> Посмотреть категории
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -157,6 +285,78 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }, 100);
+    }
+});
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Автоматически раскрываем категории, если есть текущая категория
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/category/')) {
+        console.log('Current category path:', currentPath);
+        
+        // Попробуем найти и раскрыть родительские категории
+        setTimeout(() => {
+            const currentCategoryLinks = document.querySelectorAll(`a[href="${currentPath}"]`);
+            currentCategoryLinks.forEach(link => {
+                let parentCollapse = link.closest('.subcategories.collapse');
+                while (parentCollapse) {
+                    const collapseId = parentCollapse.id;
+                    const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
+                    if (toggleButton && !toggleButton.classList.contains('collapsed')) {
+                        const bsCollapse = new bootstrap.Collapse(parentCollapse, {
+                            toggle: true
+                        });
+                    }
+                    parentCollapse = parentCollapse.parentElement.closest('.subcategories.collapse');
+                }
+            });
+        }, 100);
+    }
+
+    // Автоматическая отправка формы при изменении сортировки
+    const sortSelect = document.querySelector('select[name="sort"]');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            document.getElementById('filter-form').submit();
+        });
+    }
+
+    // Автоматическая отправка формы при изменении режима фильтрации
+    const priceModeSelect = document.querySelector('select[name="price_mode"]');
+    if (priceModeSelect) {
+        priceModeSelect.addEventListener('change', function() {
+            document.getElementById('filter-form').submit();
+        });
+    }
+
+    // Валидация цен - минимальная цена не может быть больше максимальной
+    const minPriceInput = document.querySelector('input[name="min_price"]');
+    const maxPriceInput = document.querySelector('input[name="max_price"]');
+    
+    function validatePrices() {
+        if (minPriceInput.value && maxPriceInput.value) {
+            const min = parseFloat(minPriceInput.value);
+            const max = parseFloat(maxPriceInput.value);
+            if (min > max) {
+                minPriceInput.setCustomValidity('Минимальная цена не может быть больше максимальной');
+                return false;
+            }
+        }
+        minPriceInput.setCustomValidity('');
+        return true;
+    }
+
+    if (minPriceInput && maxPriceInput) {
+        minPriceInput.addEventListener('change', validatePrices);
+        maxPriceInput.addEventListener('change', validatePrices);
+        
+        document.getElementById('filter-form').addEventListener('submit', function(e) {
+            if (!validatePrices()) {
+                e.preventDefault();
+                alert('Минимальная цена не может быть больше максимальной');
+            }
+        });
     }
 });
 </script>

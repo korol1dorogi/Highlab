@@ -4,11 +4,11 @@
         <a href="{{ category.get_absolute_url }}" class="text-decoration-none flex-grow-1 {% if current_category and current_category.id == category.id %}text-white{% else %}text-dark{% endif %}">
             {{ category.name }}
             <span class="badge {% if current_category and current_category.id == category.id %}bg-light text-dark{% else %}bg-secondary{% endif %} ms-1">
-                {{ category.get_products_count }}  <!-- ИСПРАВЛЕННАЯ СТРОКА -->
+                {{ category.get_products_count }}
             </span>
         </a>
         {% if not category.is_leaf_node %}
-        <button class="btn btn-sm {% if current_category and current_category.id == category.id %}btn-light{% else %}btn-outline-secondary{% endif %} toggle-subcategories ms-2" 
+        <button class="btn btn-sm {% if current_category and current_category.id == category.id %}btn-light{% else %}btn-outline-secondary{% endif %} toggle-subcategories ms-2 collapsed" 
                 type="button"
                 data-bs-toggle="collapse" 
                 data-bs-target="#subcategories-{{ category.id }}"

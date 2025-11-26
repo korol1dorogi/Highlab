@@ -5,7 +5,7 @@
     {% endif %}
     
     <!-- Адаптивное изображение с lazy loading -->
-    <div class="product-image-mobile d-md-none">
+    <div class="product-image-mobile d-md-none text-center">
         <img 
             {% if product.main_image %}
             data-src="{{ product.main_image.url }}"
@@ -14,23 +14,27 @@
             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='375' viewBox='0 0 300 375'%3E%3Crect width='300' height='375' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EНет изображения%3C/text%3E%3C/svg%3E"
             {% endif %}
             alt="{{ product.name }}"
-            class="lazy-image"
+            class="lazy-image img-fluid"
             loading="lazy"
+            style="max-height: 200px; width: auto;"
         >
     </div>
     
     <!-- Десктопная версия изображения -->
-    <img 
-        {% if product.main_image %}
-        data-src="{{ product.main_image.url }}"
-        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EЗагрузка...%3C/text%3E%3C/svg%3E"
-        {% else %}
-        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EНет изображения%3C/text%3E%3C/svg%3E"
-        {% endif %}
-        alt="{{ product.name }}"
-        class="lazy-image product-image-desktop d-none d-md-block w-100"
-        loading="lazy"
-    >
+    <div class="product-image-desktop d-none d-md-block text-center">
+        <img 
+            {% if product.main_image %}
+            data-src="{{ product.main_image.url }}"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EЗагрузка...%3C/text%3E%3C/svg%3E"
+            {% else %}
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EНет изображения%3C/text%3E%3C/svg%3E"
+            {% endif %}
+            alt="{{ product.name }}"
+            class="lazy-image img-fluid"
+            loading="lazy"
+            style="max-height: 180px; width: auto;"
+        >
+    </div>
     
     <div class="card-body d-flex flex-column">
         <h6 class="card-title">{{ product.name }}</h6>

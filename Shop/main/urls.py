@@ -6,11 +6,11 @@ app_name = 'shop'
 
 urlpatterns = [
     # Главная страница магазина - список товаров
-    path('', views.ProductListView.as_view(), name='product_list'),
+    path('', views.product_list, name='product_list'),  # ИЗМЕНЕНО
     
-    # Товары по иерархической категории (например: category/phones/apple/)
+    # Товары по иерархической категории
     re_path(r'^category/(?P<category_path>[\w\/-]+)/$', 
-            views.ProductListView.as_view(), 
+            views.product_list,  # ИЗМЕНЕНО
             name='product_list_by_category'),
     
     # Детальная страница товара

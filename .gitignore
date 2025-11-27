@@ -1,2 +1,24 @@
+# Virtual environment
 .venv/
-Shop/media/**/*
+venv/
+env/
+
+# Database
+*.sqlite3
+*.db
+*.sqlite
+
+# Environment variables
+.env
+*.env
+.env.*
+.venv
+
+# Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+media/
+staticfiles/

@@ -1,4 +1,3 @@
-# shop/telegram_service.py
 import requests
 from django.conf import settings
 import re
@@ -7,8 +6,8 @@ class TelegramService:
     """Сервис для отправки уведомлений в Telegram"""
     
     def __init__(self):
-        self.bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '***REMOVED-TELEGRAM-TOKEN***')
-        self.chat_id = getattr(settings, 'TELEGRAM_CHAT_ID', '***REMOVED-CHAT-ID***')
+        self.bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+        self.chat_id = getattr(settings, 'TELEGRAM_CHAT_ID', None)
     
     def send_order_notification(self, order):
         """Отправка уведомления о новом заказе"""

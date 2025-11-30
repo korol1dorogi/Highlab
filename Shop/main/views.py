@@ -775,3 +775,6 @@ def debug_products(request):
         'breadcrumbs': [{'name': 'Все товары', 'url': reverse('shop:product_list')}],
         'paginate_by': 12
     })
+
+def credits_view(request):
+    return render(request, 'credits.html')

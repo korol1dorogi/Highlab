@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default=r'django-insecure-@k#7x9!q2e$r5t8y*u(i*o&p%a$s^d*f(g)h_j+k=l;:?><')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv(), default = 'localhost,127.0.0.1')
 
 
 # Application definition
@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
-    'main2',
     'index',
     'mptt',
     'easy_pdf',
@@ -140,5 +139,5 @@ PRODUCTS_PER_PAGE = 12
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = config('TELEGRAM_ADMIN_ID', cast=int)
+TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='0')
+TELEGRAM_CHAT_ID = config('TELEGRAM_ADMIN_ID', cast=int, default=0)

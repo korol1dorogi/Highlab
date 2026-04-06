@@ -1,5 +1,0 @@
-# Сначала категории
-python manage.py import_laudlink_categories categories_structure.json
-
-# Затем товары (ограничьте для теста)
-python manage.py import_laudlink_product all_products_with_variants.json --limit 5

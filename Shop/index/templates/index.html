@@ -1,17 +1,580 @@
-<!doctype html>
-{% load static %}
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>highlab_front</title>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ABC FARBEN | Дистрибьюторский центр строительных материалов</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="{% static 'index/assets/index-C08zztSi.js' %}"></script>
-    <link rel="stylesheet" crossorigin href="{% static 'index/assets/index-D6cHwhoc.css' %}">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #1A1F2C;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* Variables */
+        :root {
+            --primary: #0B2B5E;
+            --primary-dark: #071D40;
+            --accent: #E88D2E;
+            --accent-hover: #D47A1A;
+            --gray-light: #F5F7FC;
+            --gray-mid: #E2E8F0;
+            --text-dark: #1E293B;
+            --text-muted: #475569;
+            --shadow-sm: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+            --shadow-md: 0 20px 25px -12px rgba(0, 0, 0, 0.08);
+            --border-radius: 1.25rem;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header & Navigation */
+        .header {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(4px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--primary) 0%, #1E4A7A 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .logo span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--accent);
+            display: block;
+            letter-spacing: 0;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 500;
+            color: var(--text-dark);
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+        .btn-outline {
+            border: 1.5px solid var(--primary);
+            background: transparent;
+            padding: 0.5rem 1.25rem;
+            border-radius: 40px;
+            font-weight: 600;
+            color: var(--primary);
+            transition: all 0.2s;
+        }
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-secondary {
+            background: var(--primary);
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn-secondary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(120deg, #F0F5FF 0%, #FFFFFF 100%);
+            padding: 4rem 0 5rem;
+            border-bottom: 1px solid var(--gray-mid);
+        }
+        .hero-grid {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+        .hero-content {
+            flex: 1;
+        }
+        .hero-badge {
+            background: var(--accent);
+            color: white;
+            display: inline-block;
+            padding: 0.25rem 1rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+        .hero-content h1 {
+            font-size: 3.3rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        .hero-content p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 90%;
+            margin-bottom: 2rem;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .hero-stats {
+            flex: 0.8;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Sections general */
+        .section {
+            padding: 5rem 0;
+        }
+        .section-light {
+            background-color: var(--gray-light);
+        }
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            letter-spacing: -0.01em;
+        }
+        .section-sub {
+            color: var(--text-muted);
+            max-width: 700px;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        .grid-2cols, .grid-3cols, .grid-stats {
+            display: grid;
+            gap: 2rem;
+        }
+        .grid-2cols {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .grid-3cols {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        .grid-stats {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.8rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s;
+            border: 1px solid var(--gray-mid);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+        .card-icon {
+            font-size: 2.5rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+        .card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 3px solid var(--accent);
+        }
+        .stat-card .big-number {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        /* Partner CTA */
+        .cta-block {
+            background: linear-gradient(115deg, var(--primary) 0%, #103a66 100%);
+            border-radius: 2rem;
+            padding: 3rem;
+            color: white;
+            text-align: center;
+        }
+        .cta-block h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+        .cta-block .btn-primary {
+            background: white;
+            color: var(--primary);
+            margin-top: 1rem;
+        }
+        .cta-block .btn-primary:hover {
+            background: var(--gray-light);
+        }
+
+        footer {
+            background: #0A1424;
+            color: #B0C4DE;
+            padding: 3rem 0 2rem;
+        }
+        .footer-grid {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .footer-logo h3 {
+            font-size: 1.6rem;
+            color: white;
+        }
+        .footer-links {
+            display: flex;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+        .footer-links a {
+            color: #B0C4DE;
+            text-decoration: none;
+        }
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+        .copyright {
+            text-align: center;
+            border-top: 1px solid #1E2A3A;
+            padding-top: 2rem;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 900px) {
+            .grid-2cols, .grid-3cols, .grid-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .hero-grid {
+                flex-direction: column;
+            }
+            .hero-content p {
+                max-width: 100%;
+            }
+            .section-title {
+                font-size: 1.8rem;
+            }
+        }
+        @media (max-width: 640px) {
+            .grid-2cols, .grid-3cols, .grid-stats {
+                grid-template-columns: 1fr;
+            }
+            .navbar {
+                flex-direction: column;
+            }
+            .nav-links {
+                justify-content: center;
+            }
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+            .section {
+                padding: 3rem 0;
+            }
+        }
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <h1>ABC FARBEN</h1>
+                <span>дистрибьюторский центр</span>
+            </div>
+            <div class="nav-links">
+                <a href="#about">О компании</a>
+                <a href="#stats">Показатели</a>
+                <a href="#advantages">Преимущества</a>
+                <a href="{% url 'main:product_list' %}" id="shopNavBtn" class="btn-outline"><i class="fas fa-store"></i> Магазин</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <div class="hero-badge">ТОП-3 производитель ЛКМ в России</div>
+                <h1>Надёжные лакокрасочные материалы<br>полного цикла</h1>
+                <p>Собственное сырьё, инновационные рецептуры и 30 лет доверия. <br>Оптовые поставки по всей России и СНГ.</p>
+                <div class="hero-buttons">
+                    <a href="{% url 'main:product_list' %}" id="shopHeroBtn" class="btn-primary"><i class="fas fa-arrow-right"></i> Перейти в магазин</a>
+                    <a href="#about" class="btn-secondary">Узнать больше</a>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">производственные площадки</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">80K+</div>
+                    <div class="stat-label">тонн продукции/год</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">30 лет</div>
+                    <div class="stat-label">опыта с 1995</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">150+</div>
+                    <div class="stat-label">оптовых партнёров</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT (О компании) -->
+    <section id="about" class="section">
+        <div class="container">
+            <div class="grid-2cols">
+                <div class="fade-up">
+                    <h2 class="section-title">ABC FARBEN сегодня</h2>
+                    <p style="margin-bottom: 1rem;"><strong>Высокотехнологичная компания полного цикла.</strong> Собственные научные разработки, современные автоматизированные линии, система бережливого производства и новые складские комплексы.</p>
+                    <p>Мы запустили 4 площадки в центре России и на Урале, производим сырьевые компоненты (латексы, полуфабрикатные лаки, тонкий синтез) как для собственных ЛКМ, так и для других заводов. 45 000 м² складов позволяют доставлять продукцию в любую точку РФ и стран СНГ.</p>
+                    <p style="margin-top: 1rem;">✔ 15 собственных брендов: от эконом до премиум (Ticiana Deluxe и др.)<br>✔ Пятиступенчатый контроль качества каждой партии<br>✔ Экологичная упаковка из вторичного сырья с 2021 года</p>
+                </div>
+                <div class="fade-up">
+                    <div class="card" style="background: var(--gray-light); height: 100%;">
+                        <i class="fas fa-flask card-icon" style="color: var(--primary);"></i>
+                        <h3>Инновации и импортозамещение</h3>
+                        <p>Единственный производитель краски со статическим эффектом для Министерства обороны (не отражает ИК-лучи). Технологии Ticiana Deluxe разработаны при поддержке итальянских мастеров. С 2023 года запущена линейка импортозамещающих сырьевых добавок для ЛКМ.</p>
+                        <p style="margin-top: 0.8rem;"><i class="fas fa-check-circle" style="color: var(--accent);"></i> «Там, где другие видят трудности, мы видим новые возможности!»</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- СТАТИСТИКА / ЦИФРЫ -->
+    <section id="stats" class="section section-light">
+        <div class="container">
+            <div style="text-align: center;">
+                <h2 class="section-title">Цифры, которые говорят за нас</h2>
+                <p class="section-sub">Ключевые показатели крупнейшего производителя ЛКМ в России</p>
+            </div>
+            <div class="grid-stats">
+                <div class="stat-card fade-up"><div class="big-number">4</div><div>производственные<br>площадки</div></div>
+                <div class="stat-card fade-up"><div class="big-number">80 000 т</div><div>готовой продукции<br>ежегодно</div></div>
+                <div class="stat-card fade-up"><div class="big-number">15</div><div>собственных брендов<br>эконом–премиум</div></div>
+                <div class="stat-card fade-up"><div class="big-number">30 лет</div><div>опыта на рынке<br>с 1995 года</div></div>
+                <div class="stat-card fade-up"><div class="big-number">150+</div><div>оптовых партнёров<br>в РФ и СНГ</div></div>
+                <div class="stat-card fade-up"><div class="big-number">1000+</div><div>квалифицированных<br>сотрудников</div></div>
+                <div class="stat-card fade-up"><div class="big-number">45 000 м²</div><div>складских площадей<br>по всей России</div></div>
+                <div class="stat-card fade-up"><div class="big-number">ТОП-3</div><div>крупнейший производитель<br>ЛКМ в РФ</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ПРЕИМУЩЕСТВА И ТЕХНОЛОГИИ -->
+    <section id="advantages" class="section">
+        <div class="container">
+            <h2 class="section-title">Технологическое лидерство</h2>
+            <p class="section-sub">Собственный НИОЦ, пятиступенчатый контроль, инновации для оборонной и строительной отраслей</p>
+            <div class="grid-3cols">
+                <div class="card fade-up"><i class="fas fa-microscope card-icon"></i><h3>Научный центр</h3><p>Уникальные рецептуры и ежедневные разработки. Собственные водно-дисперсионные латексы и продукты тонкого синтеза.</p></div>
+                <div class="card fade-up"><i class="fas fa-chart-line card-icon"></i><h3>5-ступенчатый контроль</h3><p>Каждая партия проходит строгий контроль качества, что гарантирует соответствие ГОСТ и ТУ.</p></div>
+                <div class="card fade-up"><i class="fas fa-recycle card-icon"></i><h3>Эко-упаковка</h3><p>С 2021 года водно-дисперсионные краски разливаются в тару из вторичного сырья — забота об экологии.</p></div>
+                <div class="card fade-up"><i class="fas fa-tank card-icon"></i><h3>Для Минобороны</h3><p>Краска со статическим эффектом, не отражающая ИК-лучи — применяется для покрытия танков и спецтехники.</p></div>
+                <div class="card fade-up"><i class="fas fa-truck-ramp-box card-icon"></i><h3>Импортозамещение</h3><p>Новая линейка сырьевых компонентов и добавок для ЛКМ, снижаем зависимость от зарубежных поставок.</p></div>
+                <div class="card fade-up"><i class="fas fa-palette card-icon"></i><h3>Ticiana Deluxe</h3><p>Декоративные материалы разработаны в Италии при поддержке мастеров-декораторов. Итальянский стиль и русское качество.</p></div>
+            </div>
+        </div>
+    </section>
+
+    
+    <!-- ЛЮДИ И МИССИЯ -->
+    <section class="section">
+        <div class="container">
+            <div class="grid-2cols" style="align-items: center;">
+                <div class="fade-up">
+                    <h2 class="section-title">Люди — главная ценность</h2>
+                    <p>Более 1000 сотрудников — сплочённая команда профессионалов, увлечённая идеей совершенствования производства. Мы инвестируем в развитие персонала и создаём комфортные условия труда.</p>
+                    <p style="margin-top: 1rem;">«Каждый год мы ставим перед собой амбициозные задачи: совершенствовать рецептуры, расширять географию поставок и запускать новые проекты. Движение всегда только вперёд!»</p>
+                    <p style="margin-top: 1rem;"><i class="fas fa-chart-simple" style="color: var(--accent);"></i> Стратегия устойчивого долгосрочного развития, современные решения для промышленности и строительства.</p>
+                </div>
+                <div class="fade-up">
+                    <div class="card" style="background: linear-gradient(145deg, #0B2B5E, #123A6B); color: white;">
+                        <i class="fas fa-quote-left" style="font-size: 2rem; opacity: 0.6; margin-bottom: 1rem;"></i>
+                        <p style="font-size: 1.1rem;">«Мы производим сырьевые компоненты не только для себя, но и для других производителей. Быстроменяющиеся внешние обстоятельства подтолкнули нас к развитию импортозамещения. Там, где другие видят трудности, мы видим новые возможности».</p>
+                        <p style="margin-top: 1.5rem;">— Управляющий директор ABC FARBEN</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-logo">
+                <h3>ABC FARBEN</h3>
+                <p style="margin-top: 0.5rem;">Лакокрасочные материалы <br>полного цикла с 1995 года</p>
+            </div>
+            <div class="footer-links">
+                <div>
+                    <h4 style="color: white;">Меню</h4>
+                    <a href="#about">О компании</a><br>
+                    <a href="#stats">Показатели</a><br>
+                    <a href="#advantages">Технологии</a>
+                </div>
+                
+                <div>
+                    <h4 style="color: white;">Контакты</h4>
+                    <p><i class="fas fa-phone-alt"></i> +7 (800) 555-35-35</p>
+                    <p><i class="fas fa-envelope"></i> partner@abcfarben.ru</p>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            © 2025 ABC FARBEN — дистрибьюторский центр строительных материалов. Все права защищены.
+        </div>
+    </div>
+</footer>
+
+<script>
+    // ПЛАВНЫЙ СКРОЛЛ ДЛЯ ЯКОРЕЙ
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href === "#" || href === "") return;
+            const target = document.querySelector(href);
+            if (target) {
+                e.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
+    // АНИМАЦИЯ ПРИ СКРОЛЛЕ (Intersection Observer для fade-up)
+    const fadeElements = document.querySelectorAll('.fade-up');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: "0px 0px -20px 0px" });
+    fadeElements.forEach(el => observer.observe(el));
+
+    // Инициализация видимых элементов на старте (если уже видны)
+    setTimeout(() => {
+        fadeElements.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight - 100) {
+                el.classList.add('visible');
+                observer.unobserve(el);
+            }
+        });
+    }, 100);
+</script>
+</body>
 </html>

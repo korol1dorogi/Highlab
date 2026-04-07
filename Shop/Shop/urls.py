@@ -10,7 +10,6 @@ urlpatterns = [
     # URL магазина электроники
     path('shop/', include('main.urls', namespace='main')),
     
-    # Главная страница (будет создана позже)
     path('', include('index.urls', namespace='index')),
 ]
 

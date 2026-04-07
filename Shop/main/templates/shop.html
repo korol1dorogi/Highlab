@@ -1,664 +1,361 @@
-<!-- templates/base.html -->
+<!-- templates/shop.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ABC FARBEN | Магазин строительных материалов{% endblock %}</title>
     
-    <title>{% block title %}Интернет-магазин{% endblock %}</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts & Bootstrap Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Custom CSS -->
     <style>
-        .categories-tree {
-        max-height: 70vh;
-        overflow-y: auto;
-    }
-
-    .category-node {
-        transition: all 0.3s ease;
-    }
-
-    .category-header {
-        background: #f8f9fa;
-        transition: all 0.3s ease;
-        border: 1px solid #dee2e6 !important;
-    }
-
-    .category-header:hover {
-        background: #e9ecef;
-        border-color: #0d6efd !important;
-    }
-
-    .category-header.bg-primary {
-        border-color: #0d6efd !important;
-    }
-
-    .category-header a {
-        color: #495057;
-        font-weight: 500;
-    }
-
-    .category-header a:hover {
-        color: #0d6efd;
-    }
-
-    .category-header.bg-primary a {
-        color: white;
-    }
-
-    .category-header.bg-primary a:hover {
-        color: white;
-        opacity: 0.9;
-    }
-
-    .subcategories {
-        border-left: 2px solid #dee2e6;
-        margin-left: 0.5rem;
-        padding-left: 0.5rem;
-    }
-
-    .toggle-subcategories {
-        transition: all 0.3s ease;
-        width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-    }
-
-    .toggle-subcategories .bi-chevron-down {
-        transition: transform 0.3s ease;
-        font-size: 0.8rem;
-    }
-
-    .toggle-subcategories:not(.collapsed) .bi-chevron-down {
-        transform: rotate(180deg);
-    }
-
-    /* Анимация раскрытия */
-    .collapse {
-        transition: all 0.3s ease;
-    }
-
-    /* Улучшения для сайдбара */
-    /* Исправление позиционирования сайдбара */
-    .sticky-sidebar-container {
-        position: sticky;
-        top: 20px;
-        height: fit-content;
-        max-height: calc(100vh - 40px);
-        overflow-y: auto;
-    }
-
-    .category-sidebar {
-        position: static !important; /* Переопределяем sticky если был */
-    }
-
-    /* Улучшаем скролл для категорий */
-    .categories-tree {
-        max-height: 50vh;
-        overflow-y: auto;
-        scrollbar-width: thin;
-    }
-
-    .categories-tree::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .categories-tree::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 2px;
-    }
-
-    .categories-tree::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 2px;
-    }
-
-    .categories-tree::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
-    }
-
-    /* Улучшения для мобильных устройств */
-    @media (max-width: 768px) {
-        .category-header {
-            padding: 0.75rem;
+        /* ---------- Глобальные переменные (ABC FARBEN) ---------- */
+        :root {
+            --primary: #0B2B5E;
+            --primary-dark: #071D40;
+            --accent: #E88D2E;
+            --accent-hover: #D47A1A;
+            --gray-bg: #F5F7FC;
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            --card-hover-shadow: 0 20px 30px -12px rgba(0,0,0,0.12);
+            --border-radius: 1rem;
         }
-        
-        .subcategories {
-            margin-left: 0.25rem;
-            padding-left: 0.25rem;
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1e293b;
+            line-height: 1.5;
         }
-        
-        .categories-tree {
-            max-height: 60vh;
+        /* Навигация (светлая) */
+        .navbar {
+            background: white !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 0.75rem 0;
         }
-        
-        .category-sidebar {
-            position: static;
-            margin-bottom: 2rem;
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, var(--primary), #1E4A7A);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
         }
-    }
-
-    /* Стили для активных ссылок "Все товары" */
-    .bg-primary.text-white {
-        border-color: #0d6efd !important;
-    }
-        
-    /* Улучшенные стили для пагинации */
-.pagination-container {
-    margin: 2rem 0;
-}
-
-.pagination {
-    margin-bottom: 0;
-    flex-wrap: wrap;
-}
-
-.page-link {
-    color: #495057;
-    border: 1px solid #dee2e6;
-    padding: 0.5rem 0.75rem;
-    transition: all 0.2s ease;
-    min-width: 44px;
-    text-align: center;
-}
-
-.page-link:hover {
-    color: #0d6efd;
-    background-color: #e9ecef;
-    border-color: #dee2e6;
-    transform: translateY(-1px);
-}
-
-.page-item.active .page-link {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: white;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
-}
-
-.page-item.disabled .page-link {
-    color: #6c757d;
-    pointer-events: none;
-    background-color: #f8f9fa;
-    border-color: #dee2e6;
-}
-
-/* Стили для иконок */
-.page-link i {
-    font-size: 0.875rem;
-}
-
-/* Адаптивность пагинации */
-@media (max-width: 768px) {
-    .pagination {
-        font-size: 0.875rem;
-    }
-    
-    .page-link {
-        padding: 0.375rem 0.5rem;
-        min-width: 38px;
-        font-size: 0.8rem;
-    }
-    
-    /* На мобильных скрываем некоторые страницы, оставляя только важные */
-    .page-item:not(.active):not(:first-child):not(:last-child):not(:nth-child(2)):not(:nth-last-child(2)) {
-        display: none;
-    }
-    
-    /* Но всегда показываем многоточия */
-    .page-item.disabled .page-link {
-        display: block !important;
-    }
-}
-
-@media (max-width: 576px) {
-    .pagination {
-        font-size: 0.8rem;
-    }
-    
-    .page-link {
-        padding: 0.25rem 0.375rem;
-        min-width: 34px;
-        font-size: 0.75rem;
-    }
-}
-        
-    /* Уведомления */
-    .notification-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        max-width: 400px;
-        width: 90%;
-    }
-
-    .custom-notification {
-        border-radius: 12px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        border: none;
-        margin-bottom: 15px;
-        transform: translateX(400px);
-        opacity: 0;
-        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        backdrop-filter: blur(10px);
-        overflow: hidden;
-    }
-
-    .custom-notification.show {
-        transform: translateX(0);
-        opacity: 1;
-    }
-
-    .custom-notification.success {
-        background: linear-gradient(135deg, #d4edda, #c3e6cb);
-        border-left: 4px solid #28a745;
-    }
-
-    .custom-notification.danger {
-        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-        border-left: 4px solid #dc3545;
-    }
-
-    .custom-notification.warning {
-        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-        border-left: 4px solid #ffc107;
-    }
-
-    .custom-notification.info {
-        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
-        border-left: 4px solid #17a2b8;
-    }
-
-    .notification-icon {
-        font-size: 1.5rem;
-        margin-right: 12px;
-        flex-shrink: 0;
-    }
-
-    .notification-content {
-        flex-grow: 1;
-    }
-
-    .notification-close {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        opacity: 0.7;
-        cursor: pointer;
-        padding: 0;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: all 0.3s ease;
-    }
-
-    .notification-close:hover {
-        opacity: 1;
-        background: rgba(0,0,0,0.1);
-    }
-
-    /* Анимации */
-    .spinner {
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    @keyframes cartBounce {
-        0%, 20%, 60%, 100% {
-            transform: translateY(0);
+        .navbar-brand i {
+            color: var(--accent);
         }
-        40% {
-            transform: translateY(-8px);
+        .nav-link {
+            color: #1e293b !important;
+            font-weight: 500;
+            transition: color 0.2s;
         }
-        80% {
-            transform: translateY(-4px);
+        .nav-link:hover {
+            color: var(--accent) !important;
         }
-    }
-
-    .cart-bounce {
-        animation: cartBounce 0.6s ease;
-    }
-
-    @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-
-    /* Стили товаров */
-    .product-detail-image-container {
-        position: relative;
-        background: #f8f9fa;
-        min-height: 300px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .product-detail-image {
-        max-height: 70vh;
-        object-fit: contain;
-    }
-
-    .lazy-image {
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out;
-        background: #f8f9fa;
-    }
-
-    .lazy-image.loaded {
-        opacity: 1;
-    }
-
-    .lazy-load-placeholder {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-    }
-
-    .product-image-mobile {
-        width: 100%;
-        height: 0;
-        padding-bottom: 125%;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .product-image-mobile img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .product-image-desktop {
-        height: 200px;
-        object-fit: cover;
-    }
-
-    .product-card {
-        transition: transform 0.2s;
-        height: 100%;
-        margin-bottom: 1.5rem;
-    }
-
-    .product-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-
-    .price-old {
-        text-decoration: line-through;
-        color: #6c757d;
-    }
-
-    .price-new {
-        color: #dc3545;
-        font-weight: bold;
-    }
-
-    .product-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-        align-items: stretch;
-    }
-
-    .product-card .card-body {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
-
-    .product-card .card-img-top {
-        height: 200px;
-        object-fit: cover;
-        width: 100%;
-    }
-
-    .product-card .card-text {
-        flex-grow: 1;
-    }
-
-    .product-card .action-buttons {
-        margin-top: auto;
-    }
-
-    .product-col {
-        display: flex;
-    }
-
-    .product-col .card {
-        width: 100%;
-    }
-
-    /* Улучшаем внешний вид кнопок добавления в корзину */
-    .add-to-cart-form .btn {
-        transition: all 0.3s ease;
-    }
-
-    .add-to-cart-form .btn:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-    }
-
-    /* Адаптивность */
-    @media (max-width: 768px) {
-        .product-detail-image {
-            max-height: 50vh;
-            height: auto;
+        .btn-outline-light {
+            border-color: #cbd5e1;
+            color: #1e293b;
         }
-        
-        .product-detail-image-container {
-            min-height: 200px;
+        .btn-outline-light:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
         }
-
-        .product-image-desktop {
-            height: 250px;
+        /* Карточки товаров — главное исправление */
+        .product-card {
+            border: none;
+            border-radius: var(--border-radius);
+            background: white;
+            box-shadow: var(--card-shadow);
+            transition: all 0.25s;
+            height: 100%;
+            overflow: hidden;
         }
-        
-        .product-detail-image {
-            height: 60vh;
-            max-height: 500px;
-            object-fit: contain;
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
         }
-
-        .notification-container {
-            right: 10px;
-            left: 10px;
-            width: auto;
-            max-width: none;
+        .product-card .card-img-top {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
         }
-        
-        .custom-notification {
-            margin-bottom: 10px;
+        .product-card .card-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
         }
-        
-        .notification-icon {
-            font-size: 1.3rem;
-            margin-right: 10px;
-        }
-    }
-
-    /* Оптимизация для вертикальных экранов */
-    @media (max-width: 768px) and (orientation: portrait) {
-        .product-detail-image {
-            max-height: 40vh;
-        }
-        
-        .product-image-mobile {
-            padding-bottom: 133%;
-        }
-    }
-
-    /* Горизонтальная ориентация на мобильных */
-    @media (max-width: 768px) and (orientation: landscape) {
-        .product-detail-image {
-            max-height: 60vh;
-        }
-    }
-
-    /* Для очень высоких экранов */
-    @media (min-width: 769px) and (max-height: 800px) {
-        .product-image-desktop {
-            height: 180px;
-        }
-    }
-
-    @media (max-width: 991.98px) {
-        .navbar-collapse {
-            margin-top: 1rem;
-        }
-        
-        .navbar-nav {
-            margin-bottom: 1rem;
-        }
-        
-        .navbar .input-group {
+        .product-card .card-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary);
             margin-bottom: 0.5rem;
         }
-        
-        .navbar .btn {
-            padding: 0.5rem 1rem;
+        .product-card .card-text {
+            color: #475569;
+            font-size: 0.9rem;
+            flex-grow: 1;
         }
-        
-        .product-card .card-body {
-            padding: 1rem;
-        }
-        
-        .product-card .card-img-top {
-            height: 150px;
-        }
-    }
-
-    /* Очень маленькие экраны */
-    @media (max-width: 575.98px) {
-        .container {
-            padding-left: 10px;
-            padding-right: 10px;
-        }
-        
-        .section {
-            padding: 1rem 0;
-        }
-        
-        .table-responsive {
-            font-size: 0.875rem;
-        }
-        
-        .table-responsive .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-        }
-    }
-
-    /* Улучшаем отображение форм на мобильных */
-    @media (max-width: 767.98px) {
-        .form-control, .btn {
-            font-size: 16px;
-        }
-        
-        .table th, .table td {
-            padding: 0.5rem;
-        }
-    }
-
-    /* Специальные стили для корзины на мобильных */
-    @media (max-width: 767.98px) {
-        .cart-mobile-view {
+        .price-old {
+            text-decoration: line-through;
+            color: #94a3b8;
             font-size: 0.9rem;
         }
-        
-        .cart-mobile-view .btn-group {
-            width: 100%;
+        .price-new {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.3rem;
         }
-        
-        .cart-mobile-view .btn {
-            flex: 1;
+        .add-to-cart-form .btn {
+            background: var(--primary);
+            border: none;
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
         }
-    }
+        .add-to-cart-form .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        /* Сайдбар категорий */
+        .category-header {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            transition: 0.2s;
+            margin-bottom: 0.5rem;
+        }
+        .category-header:hover {
+            border-color: var(--accent);
+            background: #f8fafc;
+        }
+        .category-header.bg-primary {
+            background: var(--primary) !important;
+        }
+        .category-header a {
+            color: var(--primary);
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .subcategories {
+            border-left: 2px solid var(--accent);
+            margin-left: 0.75rem;
+            padding-left: 0.75rem;
+        }
+        /* Пагинация */
+        .pagination .page-link {
+            color: var(--primary);
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            margin: 0 0.2rem;
+        }
+        .pagination .page-link:hover {
+            background: #f1f5f9;
+            color: var(--accent);
+        }
+        .pagination .active .page-link {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        /* Подвал */
+        footer.bg-dark {
+            background: #0a1424 !important;
+        }
+        footer .text-light {
+            color: #b0c4de !important;
+        }
+        /* Уведомления */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+            width: 90%;
+        }
+        .custom-notification {
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border: none;
+            margin-bottom: 15px;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        .custom-notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .custom-notification.success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-left: 4px solid var(--accent);
+        }
+        .custom-notification.danger {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border-left: 4px solid #dc3545;
+        }
+        .custom-notification.warning {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-left: 4px solid #ffc107;
+        }
+        .custom-notification.info {
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+            border-left: 4px solid #17a2b8;
+        }
+        .notification-icon {
+            font-size: 1.5rem;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .notification-content {
+            flex-grow: 1;
+        }
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            opacity: 0.7;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .notification-close:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.1);
+        }
+        /* Анимации */
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes cartBounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+            80% { transform: translateY(-4px); }
+        }
+        .cart-bounce {
+            animation: cartBounce 0.6s ease;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        /* Стили дерева категорий */
+        .categories-tree {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .category-node {
+            transition: all 0.3s ease;
+        }
+        .toggle-subcategories {
+            transition: all 0.3s ease;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .toggle-subcategories .bi-chevron-down {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+        .toggle-subcategories:not(.collapsed) .bi-chevron-down {
+            transform: rotate(180deg);
+        }
+        .collapse {
+            transition: all 0.3s ease;
+        }
+        .sticky-sidebar-container {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        /* lazy load */
+        .lazy-image {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            background: #f8f9fa;
+        }
+        .lazy-image.loaded {
+            opacity: 1;
+        }
+        .lazy-load-placeholder {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        /* сетка товаров */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .product-card .card-img-top { height: 160px; }
+            .product-grid { gap: 1rem; }
+        }
+        /* адаптация */
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background: white;
+                padding: 1rem;
+                border-radius: 1rem;
+                margin-top: 1rem;
+                box-shadow: var(--card-shadow);
+            }
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
-    <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
         <div class="container">
-            <!-- Бренд и кнопка для мобильных -->
             <a class="navbar-brand" href="{% url 'index:index' %}">
-                <i class="bi bi-shop"></i> Highlab
+                <i class="bi bi-shop"></i> ABC FARBEN
             </a>
-            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                 <span class="navbar-toggler-icon"></span>
             </button>
-    
-            <!-- Основное содержимое навигации -->
             <div class="collapse navbar-collapse" id="navbarContent">
-                <!-- Левая часть навигации -->
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'shop:product_list' %}">
-                            <i class="bi bi-grid"></i> Магазин
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'shop:category_list' %}">
-                            <i class="bi bi-list"></i> Категории
-                        </a>
-                    </li>
-                    <!--<li class="nav-item">
-                        <a class="nav-link" href="{% url 'shop:credits' %}">
-                            <i class="bi bi-info-circle"></i> Информация
-                        </a>
-                    </li>-->
+                    <li class="nav-item"><a class="nav-link" href="{% url 'shop:product_list' %}"><i class="bi bi-grid"></i> Магазин</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'shop:category_list' %}"><i class="bi bi-list"></i> Категории</a></li>
                 </ul>
-    
-                <!-- Правая часть навигации -->
                 <div class="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2 w-100 w-lg-auto">
-                    <!-- Поиск - видимый на всех устройствах -->
                     <form class="d-flex me-lg-2 mb-2 mb-lg-0 w-100" action="{% url 'shop:product_list' %}" method="get">
                         <div class="input-group input-group-sm">
-                            <input class="form-control" type="search" name="search" placeholder="Поиск товаров..." 
-                                   value="{{ request.GET.search }}" aria-label="Search">
-                            <button class="btn btn-outline-light" type="submit">
-                                <i class="bi bi-search"></i>
-                            </button>
+                            <input class="form-control" type="search" name="search" placeholder="Поиск товаров..." value="{{ request.GET.search }}">
+                            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
                         </div>
                     </form>
-    
-                    <!-- Корзина и пользователь -->
                     <div class="d-flex gap-2">
-                        <!-- Корзина -->
-                        <a href="{% url 'shop:cart_detail' %}" class="btn btn-outline-light position-relative">
+                        <a href="{% url 'shop:cart_detail' %}" class="btn btn-outline-secondary position-relative">
                             <i class="bi bi-cart"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                                  id="cart-badge">
-                                {{ cart_quantity|default:0 }}
-                            </span>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-badge">{{ cart_quantity|default:0 }}</span>
                         </a>
-    
-                        <!-- Профиль пользователя -->
                         {% if user.is_authenticated %}
                         <div class="dropdown">
-                            <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person"></i>
-                            </button>
+                            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-person"></i></button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><span class="dropdown-item-text">Привет, {{ user.username }}!</span></li>
                                 <li><hr class="dropdown-divider"></li>
@@ -667,9 +364,7 @@
                             </ul>
                         </div>
                         {% else %}
-                        <a href="{% url 'admin:login' %}" class="btn btn-outline-light">
-                            <i class="bi bi-box-arrow-in-right"></i>
-                        </a>
+                        <a href="{% url 'admin:login' %}" class="btn btn-outline-secondary"><i class="bi bi-box-arrow-in-right"></i></a>
                         {% endif %}
                     </div>
                 </div>
@@ -677,44 +372,31 @@
         </div>
     </nav>
 
-    <!-- Основной контент -->
     <main class="container my-4">
-        {% block content %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </main>
-    
-    <!-- Подвал -->
+
     <footer class="bg-dark text-light py-4 mt-auto">
         <div class="container text-center">
-            <p>&copy; 2025 Лаборатория-ВТ|Интернет-магазин. Все права защищены.</p>
+            <p>&copy; 2025 ABC FARBEN | Дистрибьюторский центр строительных материалов</p>
         </div>
     </footer>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    {% block scripts %}
-    {% endblock %}
+    {% block scripts %}{% endblock %}
+
     <script>
+    // Глобальные функции корзины и уведомлений
     function updateCartBadge(totalQuantity) {
         const cartBadge = document.getElementById('cart-badge');
-        if (cartBadge) {
-            cartBadge.textContent = totalQuantity;
-        }
+        if (cartBadge) cartBadge.textContent = totalQuantity;
     }
     
-    // Глобальная функция для показа уведомлений
     function showNotification(message, type = 'success') {
-        // Проверяем, находимся ли мы на странице корзины - если да, НЕ показываем уведомления
         const isCartPage = window.location.pathname.includes('cart');
         const isCheckoutPage = window.location.pathname.includes('checkout');
+        if (isCartPage || isCheckoutPage) return;
         
-        if (isCartPage || isCheckoutPage) {
-            console.log('Suppressing notification on cart/checkout page:', message);
-            return; // Не показываем уведомления на страницах корзины и оформления заказа
-        }
-        
-        // Создаем контейнер для уведомлений, если его нет
         let container = document.getElementById('notification-container');
         if (!container) {
             container = document.createElement('div');
@@ -723,33 +405,16 @@
             document.body.appendChild(container);
         }
         
-        // Создаем уведомление
         const notification = document.createElement('div');
         notification.className = `custom-notification alert alert-${type}`;
-        
-        // Иконка в зависимости от типа
         let icon = 'bi-check-circle-fill';
         let iconColor = '#28a745';
-        
         switch(type) {
-            case 'success':
-                icon = 'bi-cart-check-fill';
-                iconColor = '#28a745';
-                break;
-            case 'danger':
-                icon = 'bi-exclamation-triangle-fill';
-                iconColor = '#dc3545';
-                break;
-            case 'warning':
-                icon = 'bi-info-circle-fill';
-                iconColor = '#ffc107';
-                break;
-            case 'info':
-                icon = 'bi-info-circle-fill';
-                iconColor = '#17a2b8';
-                break;
+            case 'success': icon = 'bi-cart-check-fill'; iconColor = '#E88D2E'; break;
+            case 'danger': icon = 'bi-exclamation-triangle-fill'; iconColor = '#dc3545'; break;
+            case 'warning': icon = 'bi-info-circle-fill'; iconColor = '#ffc107'; break;
+            case 'info': icon = 'bi-info-circle-fill'; iconColor = '#17a2b8'; break;
         }
-        
         notification.innerHTML = `
             <div class="d-flex align-items-center p-3">
                 <div class="notification-icon" style="color: ${iconColor}">
@@ -764,183 +429,101 @@
                 </button>
             </div>
         `;
-        
-        // Добавляем уведомление в контейнер
         container.appendChild(notification);
-        
-        // Анимация появления
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 10);
-        
-        // Анимация для иконки корзины при добавлении товара
+        setTimeout(() => notification.classList.add('show'), 10);
         if (type === 'success') {
             const cartIcon = document.querySelector('a[href*="cart"] i.bi-cart');
             if (cartIcon) {
                 cartIcon.classList.add('cart-bounce');
-                setTimeout(() => {
-                    cartIcon.classList.remove('cart-bounce');
-                }, 600);
+                setTimeout(() => cartIcon.classList.remove('cart-bounce'), 600);
             }
         }
-        
-        // Автоматически удаляем через 2 секунды
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.style.opacity = '0';
                 notification.style.transform = 'translateX(400px)';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.remove();
-                    }
-                }, 250);
+                setTimeout(() => notification.remove(), 250);
             }
         }, 2000);
     }
     
-    // Единый обработчик для всех событий
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Global cart JavaScript loaded');
-        
-        // Функция для обработки отправки формы
+        // AJAX для форм добавления в корзину
         const handleFormSubmit = async function(e) {
             e.preventDefault();
-            
             const form = this;
             const formData = new FormData(form);
             const url = form.action;
-            
-            // Проверяем, не находимся ли мы на странице корзины
             const isCartPage = window.location.pathname.includes('cart');
             if (isCartPage) {
-                // На странице корзины отправляем форму обычным способом
                 form.submit();
                 return;
             }
-            
-            // Показываем уведомление о загрузке
             const submitBtn = form.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spinner"></i> Добавляем...';
             submitBtn.disabled = true;
-            
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
                 if (response.ok) {
                     const result = await response.json();
-                    
                     if (result.success) {
-                        // Обновляем счетчик корзины
                         updateCartBadge(result.total_quantity);
-                        // Показываем красивое уведомление
                         showNotification(result.message, 'success');
                     } else {
                         showNotification(result.message, 'danger');
                     }
                 } else {
-                    console.error('Server response not OK, submitting normally');
                     form.submit();
                 }
             } catch (error) {
-                console.error('AJAX Error:', error);
                 showNotification('Ошибка соединения. Попробуйте еще раз.', 'danger');
-                // Если AJAX не сработал, отправляем форму обычным способом
-                setTimeout(() => {
-                    form.submit();
-                }, 1500);
+                setTimeout(() => form.submit(), 1500);
             } finally {
-                // Восстанавливаем кнопку
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         };
-    
-        // Обработчик для форм добавления в корзину - ТОЛЬКО НЕ на странице корзины
+        
         if (!window.location.pathname.includes('cart')) {
             document.querySelectorAll('.add-to-cart-form').forEach(form => {
                 form.removeEventListener('submit', handleFormSubmit);
                 form.addEventListener('submit', handleFormSubmit);
             });
         }
-    
-        // Функция для lazy loading изображений
-        function initLazyLoading() {
-    const lazyImages = document.querySelectorAll('img[data-src]');
-    
-    // Функция для загрузки изображения
-    const loadImage = (img) => {
-        if (img.dataset.src) {
-            img.src = img.dataset.src;
-            img.onload = () => {
-                img.classList.remove('lazy-load-placeholder');
-                img.classList.add('loaded');
-            };
-            img.removeAttribute('data-src');
-        }
-    };
-
-    // Создаем observer с более чувствительными настройками
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                loadImage(img);
-                observer.unobserve(img);
-            }
-        });
-    }, {
-        rootMargin: '50px', // Загружаем заранее, когда изображение в 50px от viewport
-        threshold: 0.1 // Срабатывает даже при 10% видимости
-    });
-
-    // Сначала загружаем изображения, которые уже в viewport
-    lazyImages.forEach(img => {
-        const rect = img.getBoundingClientRect();
-        const isInViewport = (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-        );
         
-        if (isInViewport) {
-            // Изображение уже видно - загружаем сразу
-            loadImage(img);
-        } else {
-            // Начинаем наблюдать за остальными
-            imageObserver.observe(img);
-        }
-    });
-
-    // Дополнительно: загружаем изображения при скролле на всякий случай
-    let scrollTimeout;
-    window.addEventListener('scroll', () => {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-            lazyImages.forEach(img => {
+        // Lazy loading изображений
+        function initLazyLoading() {
+            const lazyImages = document.querySelectorAll('img[data-src]');
+            const loadImage = (img) => {
                 if (img.dataset.src) {
-                    const rect = img.getBoundingClientRect();
-                    const isVisible = (
-                        rect.top < window.innerHeight && 
-                        rect.bottom > 0
-                    );
-                    if (isVisible) {
-                        loadImage(img);
-                    }
+                    img.src = img.dataset.src;
+                    img.onload = () => {
+                        img.classList.remove('lazy-load-placeholder');
+                        img.classList.add('loaded');
+                    };
+                    img.removeAttribute('data-src');
                 }
+            };
+            const imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        loadImage(entry.target);
+                        imageObserver.unobserve(entry.target);
+                    }
+                });
+            }, { rootMargin: '50px', threshold: 0.1 });
+            lazyImages.forEach(img => {
+                const rect = img.getBoundingClientRect();
+                const isInViewport = rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+                if (isInViewport) loadImage(img);
+                else imageObserver.observe(img);
             });
-        }, 100);
-    });
-}
-    
-        // Инициализация lazy loading
+        }
         initLazyLoading();
     });
     </script>

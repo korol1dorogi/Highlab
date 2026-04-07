@@ -1,10 +1,8 @@
 <!-- templates/shop/product_detail.html -->
 {% extends 'shop.html' %}
-
-{% block title %}{{ product.name }} - Магазин{% endblock %}
+{% block title %}{{ product.name }}{% endblock %}
 
 {% block content %}
-<!-- Хлебные крошки -->
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'shop:product_list' %}">Главная</a></li>
@@ -16,37 +14,20 @@
 </nav>
 
 <div class="row">
-    <!-- Изображения товара -->
     <div class="col-md-6">
         <div class="card">
-            <!-- Главное изображение - адаптивное -->
-            <div class="product-detail-image-container">
-                <img 
-                    {% if product.main_image %}
-                    src="{{ product.main_image.url }}"
-                    {% else %}
-                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='16' fill='%236c757d'%3EНет изображения%3C/text%3E%3C/svg%3E"
-                    {% endif %}
-                    alt="{{ product.name }}"
-                    class="card-img-top product-detail-image w-100"
-                    id="main-product-image"
-                >
+            <div class="product-detail-image-container d-flex justify-content-center align-items-center bg-light" style="min-height: 300px;">
+                <img src="{% if product.main_image %}{{ product.main_image.url }}{% else %}https://via.placeholder.com/400?text=Нет+изображения{% endif %}" 
+                     alt="{{ product.name }}" class="img-fluid product-detail-image" style="max-height: 400px; object-fit: contain;">
             </div>
-            
             {% if product.images.all %}
             <div class="card-body">
-                <div class="row g-2" id="product-gallery">
+                <div class="row g-2">
                     {% for image in product.images.all %}
                     <div class="col-3">
-                        <img 
-                            data-src="{{ image.image.url }}"
-                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3C/svg%3E"
-                            alt="{{ image.alt_text }}"
-                            class="img-thumbnail lazy-image"
-                            style="cursor: pointer; height: 80px; object-fit: cover;"
-                            loading="lazy"
-                            onmouseover="document.getElementById('main-product-image').src = this.src"
-                        >
+                        <img data-src="{{ image.image.url }}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3C/svg%3E" 
+                             alt="{{ image.alt_text }}" class="img-thumbnail lazy-image" style="cursor: pointer; height: 80px; object-fit: cover;" 
+                             onmouseover="document.getElementById('main-product-image').src = this.dataset.src">
                     </div>
                     {% endfor %}
                 </div>
@@ -55,120 +36,76 @@
         </div>
     </div>
 
-    <!-- Информация о товаре -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <h1 class="card-title h3">{{ product.name }}</h1>
                 <p class="text-muted">Артикул: {{ product.sku }}</p>
-                
                 <div class="price-section mb-3">
                     {% if product.has_discount %}
-                    <div class="d-flex align-items-center">
-                        <span class="price-old me-3 h5">{{ product.old_price }} ₽</span>
-                        <span class="price-new h3">{{ product.base_price }} ₽</span>
-                        <span class="badge bg-danger ms-2">
-                            -{{ product.discount_percent|floatformat:0 }}%
-                        </span>
-                    </div>
+                        <div class="d-flex align-items-center">
+                            <span class="price-old me-3 h5">{{ product.old_price }} ₽</span>
+                            <span class="price-new h3">{{ product.base_price }} ₽</span>
+                            <span class="badge bg-danger ms-2">-{{ product.discount_percent|floatformat:0 }}%</span>
+                        </div>
                     {% else %}
-                    <span class="h3 text-dark">{{ product.base_price }} ₽</span>
+                        <span class="price-new h3">{{ product.base_price }} ₽</span>
                     {% endif %}
                 </div>
 
-                <!-- Выбор варианта -->
-                <div class="variant-selection mb-3">
-                    {% if product.variants.all %}
-                        <label for="variant-select" class="form-label"><strong>Выберите вариант:</strong></label>
-                        <select class="form-select" id="variant-select" name="variant_id">
+                {% if product.variants.all %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Выберите вариант:</label>
+                        <select class="form-select" id="variant-select">
                             {% for variant in product.variants.all %}
-                                <option value="{{ variant.id }}" 
-                                        data-price="{{ variant.price }}"
-                                        data-quantity="{{ variant.quantity }}"
-                                        {% if not variant.in_stock %}disabled{% endif %}>
-                                    {{ variant.name }} - {{ variant.price }} ₽
-                                    {% if not variant.in_stock %} (Нет в наличии){% endif %}
+                                <option value="{{ variant.id }}" data-price="{{ variant.price }}" data-quantity="{{ variant.quantity }}" {% if not variant.in_stock %}disabled{% endif %}>
+                                    {{ variant.name }} - {{ variant.price }} ₽ {% if not variant.in_stock %}(нет в наличии){% endif %}
                                 </option>
                             {% endfor %}
                         </select>
-                        
-                        <!-- Отображение наличия выбранного варианта -->
                         <div id="variant-stock" class="mt-2">
                             {% with first_variant=product.variants.first %}
-                                {% if first_variant.in_stock %}
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-check-circle"></i> В наличии ({{ first_variant.quantity }} шт.)
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-secondary">
-                                        <i class="bi bi-x-circle"></i> Нет в наличии
-                                    </span>
-                                {% endif %}
+                                {% if first_variant.in_stock %}<span class="badge bg-success">В наличии ({{ first_variant.quantity }} шт.)</span>
+                                {% else %}<span class="badge bg-secondary">Нет в наличии</span>{% endif %}
                             {% endwith %}
                         </div>
-                    {% else %}
-                        <!-- Если вариантов нет, используем основной товар -->
-                        <input type="hidden" name="variant_id" value="">
-                        <div class="availability mb-3">
-                            {% if product.in_stock %}
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-circle"></i> В наличии ({{ product.total_quantity }} шт.)
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary">
-                                    <i class="bi bi-x-circle"></i> Нет в наличии
-                                </span>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
+                    </div>
+                {% else %}
+                    <div class="mb-3">
+                        {% if product.in_stock %}
+                            <span class="badge bg-success">В наличии ({{ product.total_quantity }} шт.)</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Нет в наличии</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
 
-                <!-- Кнопки действий -->
                 <div class="action-buttons mb-4">
                     {% if product.in_stock %}
-                    <form method="post" action="{% url 'shop:cart_add' product.id %}" class="add-to-cart-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="quantity" value="1">
-                        <input type="hidden" name="variant_id" id="selected-variant-id" 
-                               value="{% if product.variants.all %}{{ product.variants.first.id }}{% endif %}">
-                        <button type="submit" class="btn btn-success btn-lg w-100 mb-2" id="add-to-cart-btn">
-                            <i class="bi bi-cart-plus"></i> Добавить в корзину
-                        </button>
-                    </form>
+                        <form method="post" action="{% url 'shop:cart_add' product.id %}" class="add-to-cart-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="1">
+                            <input type="hidden" name="variant_id" id="selected-variant-id" value="{% if product.variants.all %}{{ product.variants.first.id }}{% endif %}">
+                            <button type="submit" class="btn btn-success btn-lg w-100 mb-2"><i class="bi bi-cart-plus"></i> Добавить в корзину</button>
+                        </form>
                     {% else %}
-                    <button class="btn btn-secondary btn-lg w-100 mb-2" disabled>
-                        <i class="bi bi-bell"></i> Уведомить о поступлении
-                    </button>
+                        <button class="btn btn-secondary btn-lg w-100 mb-2" disabled><i class="bi bi-bell"></i> Уведомить о поступлении</button>
                     {% endif %}
-                    
-                    <a href="{% url 'shop:cart_detail' %}" class="btn btn-outline-primary btn-lg w-100">
-                        <i class="bi bi-cart"></i> Перейти в корзину
-                    </a>
+                    <a href="{% url 'shop:cart_detail' %}" class="btn btn-outline-primary btn-lg w-100"><i class="bi bi-cart"></i> Перейти в корзину</a>
                 </div>
 
-                <!-- Описание -->
-                <div class="description-section">
-                    <h5>Описание</h5>
-                    <p class="card-text">{{ product.description|linebreaks }}</p>
-                </div>
+                <h5>Описание</h5>
+                <p>{{ product.description|linebreaks }}</p>
 
-                <!-- Характеристики -->
                 {% if product.properties.all %}
-                <div class="properties-section mt-4">
                     <h5>Характеристики</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <tbody>
-                                {% for property in product.properties.all %}
-                                <tr>
-                                    <td><strong>{{ property.name }}</strong></td>
-                                    <td>{{ property.value }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                    <table class="table table-striped">
+                        <tbody>
+                            {% for prop in product.properties.all %}
+                            <tr><th>{{ prop.name }}</th><td>{{ prop.value }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 {% endif %}
             </div>
         </div>
@@ -179,74 +116,47 @@
 <div class="row mt-5">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Отзывы о товаре</h5>
-            </div>
+            <div class="card-header"><h5 class="mb-0">Отзывы</h5></div>
             <div class="card-body">
                 {% if approved_reviews %}
-                    <div class="reviews-list">
-                        {% for review in approved_reviews %}
-                        <div class="review-item border-bottom pb-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <strong>{{ review.user.username }}</strong>
-                                <small class="text-muted">{{ review.created|date:"d.m.Y" }}</small>
-                            </div>
-                            <div class="rating mb-2">
-                                <span class="text-warning">{{ review.get_rating_stars }}</span>
-                            </div>
-                            <p class="mb-0">{{ review.comment }}</p>
+                    {% for review in approved_reviews %}
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between"><strong>{{ review.user.username }}</strong><small>{{ review.created|date:"d.m.Y" }}</small></div>
+                            <div class="text-warning">{{ review.get_rating_stars }}</div>
+                            <p>{{ review.comment }}</p>
                         </div>
-                        {% endfor %}
-                    </div>
+                    {% endfor %}
                 {% else %}
-                    <p class="text-muted text-center">Пока нет отзывов о этом товаре.</p>
+                    <p class="text-muted">Пока нет отзывов.</p>
                 {% endif %}
 
-                <!-- Форма отзыва -->
                 {% if user.is_authenticated %}
-                <div class="mt-4">
-                    <h6>Оставить отзыв</h6>
-                    <form method="post" action="{% url 'shop:add_review' product.slug %}">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label">Оценка</label>
-                            <select class="form-select" name="rating" required>
-                                <option value="">Выберите оценку</option>
-                                <option value="5">★★★★★ Отлично</option>
-                                <option value="4">★★★★ Хорошо</option>
-                                <option value="3">★★★ Нормально</option>
-                                <option value="2">★★ Плохо</option>
-                                <option value="1">★ Ужасно</option>
+                    <div class="mt-4">
+                        <h6>Оставить отзыв</h6>
+                        <form method="post" action="{% url 'shop:add_review' product.slug %}">
+                            {% csrf_token %}
+                            <select name="rating" class="form-select mb-2" required>
+                                <option value="">Оценка</option><option value="5">5 ★★★★★</option><option value="4">4 ★★★★</option><option value="3">3 ★★★</option><option value="2">2 ★★</option><option value="1">1 ★</option>
                             </select>
-                        </div>
-                        <div class="mb-3">
-                            <textarea class="form-control" name="comment" rows="3" 
-                                      placeholder="Ваш отзыв..." required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Отправить отзыв</button>
-                    </form>
-                </div>
+                            <textarea name="comment" class="form-control mb-2" rows="3" placeholder="Ваш отзыв..." required></textarea>
+                            <button type="submit" class="btn btn-primary">Отправить</button>
+                        </form>
+                    </div>
                 {% else %}
-                <div class="alert alert-info text-center">
-                    <a href="{% url 'admin:login' %}?next={{ request.path }}" class="alert-link">Войдите</a>, 
-                    чтобы оставить отзыв
-                </div>
+                    <div class="alert alert-info"><a href="{% url 'admin:login' %}?next={{ request.path }}">Войдите</a>, чтобы оставить отзыв</div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Похожие товары -->
 {% if related_products %}
 <div class="row mt-5">
     <div class="col-12">
         <h3 class="mb-4">Похожие товары</h3>
-        <div class="row g-4">
-            {% for related_product in related_products %}
-            <div class="col-lg-3 col-md-4 col-sm-6">
-                {% include 'includes/product_card.html' with product=related_product %}
-            </div>
+        <div class="product-grid">
+            {% for p in related_products %}
+                {% include 'includes/product_card.html' with product=p %}
             {% endfor %}
         </div>
     </div>
@@ -260,56 +170,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const variantSelect = document.getElementById('variant-select');
     const selectedVariantId = document.getElementById('selected-variant-id');
     const variantStock = document.getElementById('variant-stock');
-    const addToCartBtn = document.getElementById('add-to-cart-btn');
-    
     if (variantSelect) {
         variantSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const price = selectedOption.dataset.price;
-            const quantity = selectedOption.dataset.quantity;
-            const isInStock = !selectedOption.disabled;
-            
-            // Обновляем скрытое поле с ID варианта
+            const opt = this.options[this.selectedIndex];
             selectedVariantId.value = this.value;
-            
-            // Обновляем отображение наличия
-            if (isInStock) {
-                variantStock.innerHTML = `<span class="badge bg-success">
-                    <i class="bi bi-check-circle"></i> В наличии (${quantity} шт.)
-                </span>`;
-                if (addToCartBtn) addToCartBtn.disabled = false;
-            } else {
-                variantStock.innerHTML = `<span class="badge bg-secondary">
-                    <i class="bi bi-x-circle"></i> Нет в наличии
-                </span>`;
-                if (addToCartBtn) addToCartBtn.disabled = true;
-            }
+            const inStock = !opt.disabled;
+            const qty = opt.dataset.quantity;
+            variantStock.innerHTML = inStock ? `<span class="badge bg-success">В наличии (${qty} шт.)</span>` : `<span class="badge bg-secondary">Нет в наличии</span>`;
+            document.querySelector('.add-to-cart-form button').disabled = !inStock;
         });
     }
-
-    // Lazy loading для изображений
-    const lazyImages = document.querySelectorAll('.lazy-image');
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                if (img.dataset.src) {
-                    img.src = img.dataset.src;
-                    img.classList.remove('lazy-load-placeholder');
-                    img.classList.add('loaded');
-                    img.removeAttribute('data-src');
-                }
-                observer.unobserve(img);
-            }
-        });
-    });
-
-    lazyImages.forEach(img => {
-        if (!img.src || img.src.includes('data:image/svg+xml')) {
-            img.classList.add('lazy-load-placeholder');
-        }
-        imageObserver.observe(img);
-    });
 });
 </script>
 {% endblock %}

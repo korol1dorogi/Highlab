@@ -1,8 +1,6 @@
+<!-- templates/shop/product_list.html -->
 {% extends 'shop.html' %}
-
-{% block title %}
-    {% if current_category %}{{ current_category.name }}{% else %}Все товары{% endif %} - Магазин
-{% endblock %}
+{% block title %}{% if current_category %}{{ current_category.name }}{% else %}Все товары{% endif %}{% endblock %}
 
 {% block content %}
 <!-- Хлебные крошки -->
@@ -11,41 +9,27 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'shop:product_list' %}">Главная</a></li>
         {% for crumb in breadcrumbs %}
-            {% if forloop.last %}
-            <li class="breadcrumb-item active">{{ crumb.name }}</li>
-            {% else %}
-            <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
-            {% endif %}
+            <li class="breadcrumb-item {% if forloop.last %}active{% endif %}">
+                {% if not forloop.last %}<a href="{{ crumb.url }}">{{ crumb.name }}</a>{% else %}{{ crumb.name }}{% endif %}
+            </li>
         {% endfor %}
     </ol>
 </nav>
 {% endif %}
-<!-- Добавьте этот блок после заголовка для отладки -->
-{% if debug %}
-<div class="alert alert-warning">
-    <h6>Отладочная информация:</h6>
-    <p>Всего товаров в базе: {{ debug.total_products }}</p>
-    <p>Товаров после фильтров: {{ debug.filtered_products }}</p>
-    <p>Min price: {{ current_filters.min_price }}</p>
-    <p>Max price: {{ current_filters.max_price }}</p>
-    <p>Sort: {{ current_filters.sort }}</p>
-</div>
-{% endif %}
+
 <div class="row">
-    <!-- Сайдбар с категориями -->
+    <!-- Сайдбар категорий -->
     <div class="col-md-3">
         <div class="sticky-sidebar-container">
-            <div class="card category-sidebar">
+            <div class="card category-sidebar mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="bi bi-list"></i> Категории</h5>
                 </div>
                 <div class="card-body">
-                    <a href="{% url 'shop:product_list' %}" 
-                       class="d-block mb-3 p-2 border rounded {% if not current_category %}bg-primary text-white{% else %}bg-light{% endif %} text-decoration-none">
+                    <a href="{% url 'shop:product_list' %}" class="d-block mb-3 p-2 border rounded {% if not current_category %}bg-primary text-white{% else %}bg-light{% endif %} text-decoration-none">
                         <i class="bi bi-grid-3x3-gap"></i> Все товары
                         <span class="badge {% if not current_category %}bg-light text-dark{% else %}bg-primary{% endif %} float-end">{{ products.paginator.count }}</span>
                     </a>
-                    
                     <div class="categories-tree">
                         {% for category in categories %}
                             {% include 'includes/category_node.html' with category=category %}
@@ -53,284 +37,124 @@
                     </div>
                 </div>
             </div>
-    
-            <!-- Дополнительная информация -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <!--<h6 class="card-title"><i class="bi bi-truck"></i> <a href= "/credits"> Юридическая информация и правила доставки </a></h6>-->
-                    <h6 class="card-title"><i class="bi bi-shield-check"></i> Гарантия качества</h6>
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-shield-check display-6 text-primary"></i>
+                    <h6 class="mt-2">Гарантия качества</h6>
+                    <small class="text-muted">Вся продукция сертифицирована</small>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Основной контент -->
-<!-- Основной контент -->
-<div class="col-md-9">
-    <!-- Заголовок и информация -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1">
-                {% if current_category %}
-                    {{ current_category.name }}
-                {% else %}
-                    Все товары
-                {% endif %}
-            </h1>
-            <p class="text-muted mb-0">
-                Найдено товаров: <strong>{{ products.paginator.count }}</strong>
-                {% if current_category and current_category.parent %}
-                    в категории "{{ current_category.name }}"
-                {% endif %}
-            </p>
+    <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">{% if current_category %}{{ current_category.name }}{% else %}Все товары{% endif %}</h1>
+                <p class="text-muted mb-0">Найдено товаров: <strong>{{ products.paginator.count }}</strong></p>
+            </div>
+            {% if products.paginator.num_pages > 1 %}
+                <div class="text-muted small">Страница {{ products.number }} из {{ products.paginator.num_pages }}</div>
+            {% endif %}
         </div>
-        
-        <!-- Информация о странице -->
-        {% if products.paginator.num_pages > 1 %}
-        <div class="text-muted small">
-            Страница {{ products.number }} из {{ products.paginator.num_pages }}
-        </div>
-        {% endif %}
-    </div>
 
-    <!-- БЛОК ФИЛЬТРОВ И СОРТИРОВКИ -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" id="filter-form" class="row g-3 align-items-end">
-                <!-- Скрытые поля для сохранения поиска и категории -->
-                {% if request.GET.search %}
-                <input type="hidden" name="search" value="{{ request.GET.search }}">
-                {% endif %}
-                
-                <!-- Фильтр по цене -->
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">Цена</label>
-                    <div class="input-group input-group-sm">
-                        <input type="number" 
-                               name="min_price" 
-                               class="form-control" 
-                               placeholder="От"
-                               value="{{ request.GET.min_price|default:'' }}"
-                               min="0">
-                        <span class="input-group-text">-</span>
-                        <input type="number" 
-                               name="max_price" 
-                               class="form-control" 
-                               placeholder="До"
-                               value="{{ request.GET.max_price|default:'' }}"
-                               min="0">
+        <!-- Фильтры -->
+        <div class="card filter-card mb-4">
+            <div class="card-body">
+                <form method="get" id="filter-form" class="row g-3 align-items-end">
+                    {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">{% endif %}
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Цена</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="min_price" class="form-control" placeholder="От" value="{{ request.GET.min_price|default:'' }}">
+                            <span class="input-group-text">-</span>
+                            <input type="number" name="max_price" class="form-control" placeholder="До" value="{{ request.GET.max_price|default:'' }}">
+                        </div>
                     </div>
-                    {% if price_range.min_price and price_range.max_price %}
-                    <div class="form-text">
-                        Диапазон: {{ price_range.min_price|floatformat:0 }} - {{ price_range.max_price|floatformat:0 }} ₽
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Режим фильтрации</label>
+                        <select name="price_mode" class="form-select form-select-sm">
+                            <option value="strict" {% if not request.GET.price_mode or request.GET.price_mode == 'strict' %}selected{% endif %}>Строгий</option>
+                            <option value="smart" {% if request.GET.price_mode == 'smart' %}selected{% endif %}>Интеллектуальный (±10%)</option>
+                        </select>
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Сортировка</label>
+                        <select name="sort" class="form-select form-select-sm">
+                            <option value="default" {% if not request.GET.sort or request.GET.sort == 'default' %}selected{% endif %}>По умолчанию</option>
+                            <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Цена по возрастанию</option>
+                            <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Цена по убыванию</option>
+                            <option value="name_asc" {% if request.GET.sort == 'name_asc' %}selected{% endif %}>Название А-Я</option>
+                            <option value="name_desc" {% if request.GET.sort == 'name_desc' %}selected{% endif %}>Название Я-А</option>
+                            <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>По популярности</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary btn-sm w-100 mb-1"><i class="bi bi-funnel"></i> Применить</button>
+                        <a href="{% if current_category %}{{ current_category.get_absolute_url }}{% else %}{% url 'shop:product_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm w-100">Сбросить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Активные фильтры -->
+        {% if current_filters.min_price or current_filters.max_price or current_filters.sort != 'default' %}
+        <div class="alert alert-info py-2 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Активные фильтры:</strong>
+                    {% if current_filters.min_price or current_filters.max_price %}
+                        <span class="badge bg-primary ms-2">Цена: {% if current_filters.min_price %}{{ current_filters.min_price }} ₽{% endif %}{% if current_filters.min_price and current_filters.max_price %}-{% endif %}{% if current_filters.max_price %}{{ current_filters.max_price }} ₽{% endif %} ({{ current_filters.price_mode }})</span>
+                    {% endif %}
+                    {% if current_filters.sort != 'default' %}
+                        <span class="badge bg-secondary ms-2">Сортировка: {% if current_filters.sort == 'price_asc' %}По возрастанию цены{% elif current_filters.sort == 'price_desc' %}По убыванию цены{% elif current_filters.sort == 'name_asc' %}А-Я{% elif current_filters.sort == 'name_desc' %}Я-А{% elif current_filters.sort == 'popular' %}По популярности{% endif %}</span>
                     {% endif %}
                 </div>
-    
-                <!-- Режим фильтрации цены -->
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Режим фильтрации</label>
-                    <select name="price_mode" class="form-select form-select-sm">
-                        <option value="strict" {% if request.GET.price_mode == 'strict' or not request.GET.price_mode %}selected{% endif %}>
-                            Строгий
-                        </option>
-                        <option value="smart" {% if request.GET.price_mode == 'smart' %}selected{% endif %}>
-                            Интеллектуальный (±10%)
-                        </option>
-                    </select>
-                </div>
-    
-                <!-- Сортировка -->
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Сортировка</label>
-                    <select name="sort" class="form-select form-select-sm">
-                        <option value="default" {% if request.GET.sort == 'default' or not request.GET.sort %}selected{% endif %}>
-                            По умолчанию
-                        </option>
-                        <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>
-                            Цена по возрастанию
-                        </option>
-                        <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>
-                            Цена по убыванию
-                        </option>
-                        <option value="name_asc" {% if request.GET.sort == 'name_asc' %}selected{% endif %}>
-                            Название А-Я
-                        </option>
-                        <option value="name_desc" {% if request.GET.sort == 'name_desc' %}selected{% endif %}>
-                            Название Я-А
-                        </option>
-                        <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>
-                            По популярности
-                        </option>
-                    </select>
-                </div>
-    
-                <!-- Кнопки -->
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100 mb-1">
-                        <i class="bi bi-funnel"></i> Применить
-                    </button>
-                    <a href="{% if current_category %}{{ current_category.get_absolute_url }}{% else %}{% url 'shop:product_list' %}{% endif %}" 
-                       class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="bi bi-arrow-clockwise"></i> Сбросить
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Активные фильтры -->
-    {% if current_filters.min_price or current_filters.max_price or current_filters.sort != 'default' %}
-    <div class="alert alert-info py-2 mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <strong>Активные фильтры:</strong>
-                {% if current_filters.min_price or current_filters.max_price %}
-                <span class="badge bg-primary ms-2">
-                    Цена: 
-                    {% if current_filters.min_price %}{{ current_filters.min_price }} ₽{% endif %}
-                    {% if current_filters.min_price and current_filters.max_price %}-{% endif %}
-                    {% if current_filters.max_price %}{{ current_filters.max_price }} ₽{% endif %}
-                    ({{ current_filters.price_mode }})
-                </span>
-                {% endif %}
-                {% if current_filters.sort != 'default' %}
-                <span class="badge bg-secondary ms-2">
-                    Сортировка: 
-                    {% if current_filters.sort == 'price_asc' %}По возрастанию цены{% endif %}
-                    {% if current_filters.sort == 'price_desc' %}По убыванию цены{% endif %}
-                    {% if current_filters.sort == 'name_asc' %}А-Я{% endif %}
-                    {% if current_filters.sort == 'name_desc' %}Я-А{% endif %}
-                    {% if current_filters.sort == 'popular' %}По популярности{% endif %}
-                </span>
-                {% endif %}
+                <a href="{% if current_category %}{{ current_category.get_absolute_url }}{% else %}{% url 'shop:product_list' %}{% endif %}" class="btn-close" aria-label="Очистить фильтры"></a>
             </div>
-            <a href="{% if current_category %}{{ current_category.get_absolute_url }}{% else %}{% url 'shop:product_list' %}{% endif %}" 
-               class="btn-close" aria-label="Очистить фильтры"></a>
         </div>
-    </div>
-    {% endif %}
-    
-    <!-- Поисковый запрос -->
-    {% if request.GET.search %}
-    <div class="alert alert-info d-flex align-items-center">
-        <i class="bi bi-search me-2"></i>
-        <div class="flex-grow-1">
-            Результаты поиска для: "<strong>{{ request.GET.search }}</strong>"
-        </div>
-        <a href="{% url 'shop:product_list' %}" class="btn btn-sm btn-outline-info">
-            <i class="bi bi-x-circle"></i> Очистить
-        </a>
-    </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Сетка товаров -->
-    {% if products %}
-    <div class="product-grid">
-        {% for product in products %}
-        <div class="product-col">
-            {% include 'includes/product_card.html' with product=product %}
+        {% if request.GET.search %}
+        <div class="alert alert-info d-flex align-items-center">
+            <i class="bi bi-search me-2"></i> Результаты поиска для: "<strong>{{ request.GET.search }}</strong>"
+            <a href="{% url 'shop:product_list' %}" class="btn btn-sm btn-outline-info ms-auto"><i class="bi bi-x-circle"></i> Очистить</a>
         </div>
-        {% endfor %}
-    </div>
+        {% endif %}
 
-    <!-- Пагинация -->
-    {% if products.paginator.num_pages > 1 %}
-        {% include 'includes/pagination.html' with page=products %}
-    {% endif %}
-
-    {% else %}
-    <div class="text-center py-5">
-        <i class="bi bi-search display-1 text-muted"></i>
-        <h3 class="text-muted mt-3">Товары не найдены</h3>
-        <p class="text-muted">Попробуйте изменить критерии поиска или выбрать другую категорию</p>
-        <div class="mt-4">
-            <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i> Вернуться к товарам
-            </a>
-            <a href="{% url 'shop:category_list' %}" class="btn btn-outline-secondary ms-2">
-                <i class="bi bi-list"></i> Посмотреть категории
-            </a>
-        </div>
+        <!-- Сетка товаров -->
+        {% if products %}
+            <div class="product-grid">
+                {% for product in products %}
+                    {% include 'includes/product_card.html' with product=product %}
+                {% endfor %}
+            </div>
+            {% if products.paginator.num_pages > 1 %}
+                {% include 'includes/pagination.html' with page=products %}
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-search display-1 text-muted"></i>
+                <h3 class="text-muted mt-3">Товары не найдены</h3>
+                <a href="{% url 'shop:product_list' %}" class="btn btn-primary mt-3">Вернуться к товарам</a>
+            </div>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Автоматически раскрываем категории, если есть текущая категория
-    const currentPath = window.location.pathname;
-    if (currentPath.includes('/category/')) {
-        console.log('Current category path:', currentPath);
-        
-        // Попробуем найти и раскрыть родительские категории
-        setTimeout(() => {
-            const currentCategoryLinks = document.querySelectorAll(`a[href="${currentPath}"]`);
-            currentCategoryLinks.forEach(link => {
-                let parentCollapse = link.closest('.subcategories.collapse');
-                while (parentCollapse) {
-                    const collapseId = parentCollapse.id;
-                    const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
-                    if (toggleButton && !toggleButton.classList.contains('collapsed')) {
-                        const bsCollapse = new bootstrap.Collapse(parentCollapse, {
-                            toggle: true
-                        });
-                    }
-                    parentCollapse = parentCollapse.parentElement.closest('.subcategories.collapse');
-                }
-            });
-        }, 100);
-    }
-});
-
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Автоматически раскрываем категории, если есть текущая категория
-    const currentPath = window.location.pathname;
-    if (currentPath.includes('/category/')) {
-        console.log('Current category path:', currentPath);
-        
-        // Попробуем найти и раскрыть родительские категории
-        setTimeout(() => {
-            const currentCategoryLinks = document.querySelectorAll(`a[href="${currentPath}"]`);
-            currentCategoryLinks.forEach(link => {
-                let parentCollapse = link.closest('.subcategories.collapse');
-                while (parentCollapse) {
-                    const collapseId = parentCollapse.id;
-                    const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
-                    if (toggleButton && !toggleButton.classList.contains('collapsed')) {
-                        const bsCollapse = new bootstrap.Collapse(parentCollapse, {
-                            toggle: true
-                        });
-                    }
-                    parentCollapse = parentCollapse.parentElement.closest('.subcategories.collapse');
-                }
-            });
-        }, 100);
-    }
-
-    // Автоматическая отправка формы при изменении сортировки
     const sortSelect = document.querySelector('select[name="sort"]');
-    if (sortSelect) {
-        sortSelect.addEventListener('change', function() {
-            document.getElementById('filter-form').submit();
-        });
-    }
-
-    // Автоматическая отправка формы при изменении режима фильтрации
+    if(sortSelect) sortSelect.addEventListener('change', () => document.getElementById('filter-form').submit());
     const priceModeSelect = document.querySelector('select[name="price_mode"]');
-    if (priceModeSelect) {
-        priceModeSelect.addEventListener('change', function() {
-            document.getElementById('filter-form').submit();
-        });
-    }
-
-    // Валидация цен - минимальная цена не может быть больше максимальной
+    if(priceModeSelect) priceModeSelect.addEventListener('change', () => document.getElementById('filter-form').submit());
+    
+    // Валидация цен
     const minPriceInput = document.querySelector('input[name="min_price"]');
     const maxPriceInput = document.querySelector('input[name="max_price"]');
-    
     function validatePrices() {
         if (minPriceInput.value && maxPriceInput.value) {
             const min = parseFloat(minPriceInput.value);
@@ -343,11 +167,9 @@ document.addEventListener('DOMContentLoaded', function() {
         minPriceInput.setCustomValidity('');
         return true;
     }
-
     if (minPriceInput && maxPriceInput) {
         minPriceInput.addEventListener('change', validatePrices);
         maxPriceInput.addEventListener('change', validatePrices);
-        
         document.getElementById('filter-form').addEventListener('submit', function(e) {
             if (!validatePrices()) {
                 e.preventDefault();

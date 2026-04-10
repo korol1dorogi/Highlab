@@ -27,6 +27,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from datetime import datetime
 
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from .forms import SignUpForm, ProfileForm
 # shop/views.py
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
@@ -471,67 +474,95 @@ def cart_clear(request):
 @never_cache
 @csrf_protect
 def checkout(request):
-    """Страница оформления заказа - ДОСТУПНА БЕЗ АВТОРИЗАЦИИ"""
     cart_manager = CartManager(request)
     cart_items = cart_manager.get_items()
-    
+
     if not cart_items:
         messages.error(request, "Ваша корзина пуста")
         return redirect('shop:cart_detail')
-    
+
     total_price = cart_manager.get_total_price()
-    
+
     if request.method == 'POST':
-        form = OrderForm(request.POST)
+        form = OrderForm(request.POST, user=request.user)
         if form.is_valid():
-            request.session['customer_data'] = {
-            'first_name': form.cleaned_data['first_name'],
-            'last_name': form.cleaned_data['last_name'],
-            'email': form.cleaned_data['email'],
-            'phone': form.cleaned_data['phone'],
-            }
-            # Создаем заказ
             order = form.save(commit=False)
             order.total_price = total_price
-            
-            # Для авторизованных пользователей сохраняем связь
+
+            # Проверка постоплаты
+            if order.payment_method == 'postpay':
+                if not request.user.is_authenticated:
+                    form.add_error('payment_method', 'Для постоплаты необходимо авторизоваться')
+                else:
+                    profile = request.user.profile
+                    if not profile.postpay_available:
+                        form.add_error('payment_method', 'Постоплата вам недоступна')
+                    elif total_price > profile.available_postpay_limit:
+                        form.add_error(
+                            None,
+                            f'Сумма заказа ({total_price} ₽) превышает доступный лимит постоплаты '
+                            f'({profile.available_postpay_limit} ₽).'
+                        )
+
+            if form.errors:
+                context = {
+                    'form': form,
+                    'cart_items': cart_items,
+                    'total_price': total_price,
+                    'total_quantity': cart_manager.get_total_quantity(),
+                }
+                return render(request, 'checkout.html', context)
+
+            # Сохраняем заказ
             if request.user.is_authenticated:
                 order.user = request.user
             else:
-                # Для анонимных пользователей сохраняем сессию
                 order.session_key = request.session.session_key
-            
+
             order.save()
-            
-            # Создаем элементы заказа (ОБНОВЛЕНО ДЛЯ ВАРИАНТОВ)
+
+            # Создаём элементы заказа
             for cart_item in cart_items:
                 OrderItem.objects.create(
                     order=order,
-                    product_variant=cart_item.product_variant,  # Используем вариант товара
+                    product_variant=cart_item.product_variant,
                     quantity=cart_item.quantity,
-                    price=cart_item.price  # Используем цену из корзины
+                    price=cart_item.price
                 )
-            
-            # Отправляем уведомление в Telegram
+
+            # Если постоплата, резервируем сумму
+            if order.payment_method == 'postpay' and request.user.is_authenticated:
+                profile = request.user.profile
+                profile.reserved_postpay += total_price
+                profile.save(update_fields=['reserved_postpay'])
+                order.status = 'processing_later'  # Сразу ставим статус ожидания постоплаты
+                order.save(update_fields=['status'])
+
+            # Отправка уведомления в Telegram
             telegram_service = TelegramService()
             telegram_service.send_order_notification(order)
-            
+
             # Очищаем корзину
             cart_manager.clear()
-            
-            # Показываем сообщение об успехе
+
             messages.success(request, f"✅ Ваш заказ #{order.id} успешно оформлен! Мы свяжемся с вами в ближайшее время.")
-            
             return redirect('shop:order_success', order_id=order.id)
     else:
-        # Предзаполняем форму данными пользователя, если он авторизован
         initial_data = {}
-        customer_data = request.session.get('customer_data', {})
-        if customer_data:
-            initial_data.update(customer_data)
-        
-        form = OrderForm(initial=initial_data)
-    
+        if request.user.is_authenticated:
+            profile = request.user.profile
+            initial_data = {
+                'first_name': request.user.first_name,
+                'last_name': request.user.last_name,
+                'email': request.user.email,
+                'phone': profile.phone,
+                'payment_method': 'postpay' if profile.postpay_available else 'online',
+            }
+        else:
+            initial_data = request.session.get('customer_data', {})
+
+        form = OrderForm(initial=initial_data, user=request.user)
+
     context = {
         'form': form,
         'cart_items': cart_items,
@@ -570,7 +601,6 @@ def download_order_pdf(request, order_id):
     width, height = A4
     
     # АВТОМАТИЧЕСКИЙ ВЫБОР ШРИФТА С ПОДДЕРЖКОЙ КИРИЛЛИЦЫ
-    # Пробуем найти системные шрифты с кириллицей
     font_name = "Helvetica"  # fallback
     
     try:
@@ -752,6 +782,93 @@ def download_order_pdf(request, order_id):
     response['Content-Disposition'] = f'attachment; filename="order_{order.id}.pdf"'
     
     return response
+
+def signup(request):
+    """Регистрация нового пользователя"""
+    if request.user.is_authenticated:
+        return redirect('shop:profile')
+    
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Регистрация прошла успешно! Добро пожаловать!')
+            return redirect('shop:profile')
+    else:
+        form = SignUpForm()
+    
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+def user_login(request):
+    """Вход пользователя"""
+    if request.user.is_authenticated:
+        return redirect('shop:profile')
+    
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, f'Добро пожаловать, {user.username}!')
+            next_url = request.GET.get('next', 'shop:profile')
+            return redirect(next_url)
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'registration/login.html', {'form': form})
+
+
+def user_logout(request):
+    """Выход пользователя"""
+    logout(request)
+    messages.info(request, 'Вы вышли из системы.')
+    return redirect('shop:product_list')
+
+
+@login_required
+def profile(request):
+    """Личный кабинет пользователя"""
+    profile_instance = request.user.profile
+    orders = request.user.main_orders.all().order_by('-created')[:10]
+    context = {
+        'profile': profile_instance,
+        'orders': orders,
+    }
+    return render(request, 'profile/profile.html', context)
+
+
+@login_required
+def profile_edit(request):
+    """Редактирование профиля"""
+    profile_instance = request.user.profile
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=profile_instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Профиль успешно обновлён.')
+            return redirect('shop:profile')
+    else:
+        form = ProfileForm(instance=profile_instance)
+    
+    return render(request, 'profile/profile_edit.html', {'form': form})
+
+
+@login_required
+def change_password(request):
+    """Смена пароля"""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Пароль успешно изменён.')
+            return redirect('shop:profile')
+    else:
+        form = PasswordChangeForm(request.user)
+    
+    return render(request, 'profile/change_password.html', {'form': form})
 
 def debug_products(request):
     """Временная функция для отладки"""

@@ -332,6 +332,24 @@
         <div class="container">
             <a class="navbar-brand" href="{% url 'index:index' %}">
                 <i class="bi bi-shop"></i> ABC FARBEN
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                <a class="nav-link" href="{% url 'shop:profile' %}">Личный кабинет ({{ user.username }})</a>
+                </li>
+                <li class="nav-item">
+                <form method="post" action="{% url 'shop:logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link nav-link">Выйти</button>
+                </form>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                <a class="nav-link" href="{% url 'shop:login' %}">Войти</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" href="{% url 'shop:signup' %}">Регистрация</a>
+                </li>
+                {% endif %}
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                 <span class="navbar-toggler-icon"></span>

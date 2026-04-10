@@ -4,6 +4,93 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from mptt.models import MPTTModel, TreeForeignKey
 from django.http import Http404
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        verbose_name='Пользователь'
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Телефон'
+    )
+    messenger_link = models.URLField(
+        blank=True,
+        verbose_name='Контакты в мессенджере (Telegram/WhatsApp/VK/MAX)'
+    )
+    postpay_available = models.BooleanField(
+        default=False,
+        verbose_name='Доступна постоплата'
+    )
+    max_postpay_limit = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name='Максимальный лимит постоплаты'
+    )
+    debt = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name="Дебиторская задолженность"
+    )
+    debt_deadline = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Дата закрытия задолженности'
+    )
+    permanent_discount = models.PositiveSmallIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name='Постоянная скидка, %'
+    )
+    created = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата создания'
+    )
+    updated = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата обновления'
+    )
+
+    reserved_postpay = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name='Зарезервировано по постоплате'
+    )
+
+    class Meta:
+        verbose_name = 'Профиль пользователя'
+        verbose_name_plural = 'Профили пользователей'
+
+    def __str__(self):
+        return f'Профиль: {self.user.username}'
+
+    @property
+    def full_name(self):
+        return f'{self.user.first_name} {self.user.last_name}'.strip() or self.user.username
+
+    @property
+    def available_postpay_limit(self):
+        """Доступный лимит постоплаты с учётом текущего долга и зарезервированных сумм"""
+        return max(0, self.max_postpay_limit - self.debt - self.reserved_postpay)
+
+    def pay_debt(self, amount):
+        """Уменьшить задолженность на указанную сумму"""
+        self.debt = max(0, self.debt - amount)
+        if self.debt == 0:
+            self.debt_deadline = None
+        self.save(update_fields=['debt', 'debt_deadline'])
+
 
 class Category(MPTTModel):
     """
@@ -536,9 +623,15 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('new', 'Новый'),
         ('confirmed', 'Подтвержден'),
-        ('processing', 'В обработке'),
+        ('processing', 'Ожидает оплаты'),
+        ('processing_later', 'Ожидает постоплаты'),
         ('completed', 'Завершен'),
         ('cancelled', 'Отменен'),
+    ]
+
+    PAYMENT_METHODS = [
+        ('online', 'Онлайн оплата'),
+        ('postpay', 'Постоплата'),
     ]
 
     # Контактные данные
@@ -548,15 +641,27 @@ class Order(models.Model):
     phone = models.CharField(max_length=20, verbose_name='Телефон')
     address = models.TextField(verbose_name='Адрес доставки')
     comment = models.TextField(blank=True, verbose_name='Комментарий к заказу')
-    
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHODS,
+        default='online',
+        verbose_name='Способ оплаты'
+    )
+
     # Данные заказа
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Общая стоимость')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name='Статус')
-    
+    is_paid = models.BooleanField(
+        default=False,
+        verbose_name='Оплачен (для постоплаты)',
+        help_text='Отметьте, если клиент погасил задолженность по данному заказу'
+    )
+
     # Связи
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Пользователь',related_name='main_orders')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Пользователь', related_name='main_orders')
     session_key = models.CharField(max_length=100, blank=True, verbose_name='Ключ сессии')
-    
+
     # Даты
     created = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
@@ -573,12 +678,13 @@ class Order(models.Model):
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+
 class OrderItem(models.Model):
     """Товар в заказе (обновленная)"""
     order = models.ForeignKey(
-        Order, 
-        related_name='items', 
-        on_delete=models.CASCADE, 
+        Order,
+        related_name='items',
+        on_delete=models.CASCADE,
         verbose_name='Заказ'
     )
     product_variant = models.ForeignKey(
@@ -588,8 +694,8 @@ class OrderItem(models.Model):
     )
     quantity = models.PositiveIntegerField(verbose_name='Количество')
     price = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
+        max_digits=10,
+        decimal_places=2,
         verbose_name='Цена на момент заказа'
     )
 
@@ -603,3 +709,16 @@ class OrderItem(models.Model):
     @property
     def total_price(self):
         return self.quantity * self.price
+    
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()

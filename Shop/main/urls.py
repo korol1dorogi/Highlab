@@ -47,5 +47,14 @@ urlpatterns = [
 
     path('credits/', views.credits_view, name='credits'),
 
+     # Аутентификация
+    path('signup/', views.signup, name='signup'),
+    path('login/', views.user_login, name='login'),
+    path('logout/', views.user_logout, name='logout'),
+    
+    # Профиль
+    path('profile/', views.profile, name='profile'),
+    path('profile/edit/', views.profile_edit, name='profile_edit'),
+    path('profile/password/', views.change_password, name='change_password'),
     # path('debug/', views.debug_products, name='debug_products'),
 ]

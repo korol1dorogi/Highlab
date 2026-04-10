@@ -141,3 +141,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='0')
 TELEGRAM_CHAT_ID = config('TELEGRAM_ADMIN_ID', cast=int, default=0)
+
+LOGIN_URL = 'main:login'
+LOGIN_REDIRECT_URL = 'main:profile'
+LOGOUT_REDIRECT_URL = 'main:product_list'

@@ -1,0 +1,54 @@
+{% extends 'shop.html' %}
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Личный кабинет</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Привет, {{ user.first_name|default:user.username }}!</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Телефон:</strong> {{ profile.phone|default:"не указан" }}</p>
+            <p><strong>Мессенджер:</strong> {% if profile.messenger_link %}<a href="{{ profile.messenger_link }}" target="_blank">{{ profile.messenger_link }}</a>{% else %}не указан{% endif %}</p>
+            <p><strong>Постоплата доступна:</strong> {% if profile.postpay_available %}Да (лимит {{ profile.max_postpay_limit }} ₽){% else %}Нет{% endif %}</p>
+<p><strong>Текущий долг:</strong> {{ profile.debt }} ₽</p>
+{% if profile.debt_deadline %}<p><strong>Срок погашения:</strong> {{ profile.debt_deadline|date:"d.m.Y" }}</p>{% endif %}
+<p><strong>Постоянная скидка:</strong> {{ profile.permanent_discount }}%</p>
+            
+            <a href="{% url 'shop:profile_edit' %}" class="btn btn-primary">Редактировать профиль</a>
+            <a href="{% url 'shop:change_password' %}" class="btn btn-secondary">Сменить пароль</a>
+        </div>
+    </div>
+    
+    <h3>Последние заказы</h3>
+    {% if orders %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>№ заказа</th>
+                    <th>Дата</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.created|date:"d.m.Y" }}</td>
+                    <td>{{ order.total_price }} ₽</td>
+                    <td>{{ order.get_status_display }}</td>
+                    <td><a href="{% url 'shop:order_success' order.id %}">Подробнее</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>У вас пока нет заказов.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,11 +1,19 @@
 <!-- templates/shop/checkout.html -->
 {% extends 'shop.html' %}
 
-{% block title %}Оформление заказа - Магазин{% endblock %}
+{% block title %}Оформление заказа — {{ site_settings.company_name }}{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
 
 {% block content %}
-<div class="container">
+<div>
     <h1 class="mb-4">📦 Оформление заказа</h1>
+
+    {% if not user.is_authenticated %}
+    <div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span>Есть аккаунт? <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="alert-link">Войдите</a> — данные подставятся, а заказ сохранится в кабинете.</span>
+        <a href="{% url 'accounts:register' %}" class="btn btn-outline-primary btn-sm">Регистрация</a>
+    </div>
+    {% endif %}
     
     {% if messages %}
     <div class="messages mb-4">

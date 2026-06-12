@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактирование профиля — {{ site_settings.company_name }}{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="auth-card card">
+            <h1 class="auth-card__title">Редактирование данных</h1>
+            <p class="auth-card__sub">Email и телефон используются для входа и связи по заказам.</p>
+
+            <form method="post" novalidate class="auth-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="auth-error">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="auth-field">{{ form.email }}{% if form.email.errors %}<div class="auth-field__err">{{ form.email.errors }}</div>{% endif %}</div>
+                <div class="auth-field">{{ form.phone }}{% if form.phone.errors %}<div class="auth-field__err">{{ form.phone.errors }}</div>{% endif %}</div>
+                <div class="auth-grid">
+                    <div class="auth-field">{{ form.last_name }}</div>
+                    <div class="auth-field">{{ form.first_name }}</div>
+                </div>
+                <div class="auth-field">{{ form.middle_name }}</div>
+
+                <button type="submit" class="btn btn--primary btn--lg auth-submit">Сохранить</button>
+                <a href="{% url 'accounts:profile' %}" class="btn btn--ghost auth-submit" style="margin-top: var(--space-3);">Отмена</a>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

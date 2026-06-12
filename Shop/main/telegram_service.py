@@ -7,34 +7,28 @@ class TelegramService:
     
     def __init__(self):
         self.bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
-        self.chat_id = getattr(settings, 'TELEGRAM_CHAT_ID', None)
-    
+        self.chat_ids = getattr(settings, 'TELEGRAM_CHAT_IDS', None) or []
+
     def send_order_notification(self, order):
-        """Отправка уведомления о новом заказе"""
-        if not self.bot_token or not self.chat_id:
-            print("⚠️ Telegram bot token или chat_id не настроены!")
+        """Отправка уведомления о новом заказе всем администраторам."""
+        if not self.bot_token or not self.chat_ids:
+            print("⚠️ Telegram bot token или список администраторов не настроены!")
             return False
-        
+
         message = self._format_order_message(order)
-        
         url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
-        payload = {
-            'chat_id': self.chat_id,
-            'text': message,
-            'parse_mode': 'HTML'
-        }
-        
-        try:
-            response = requests.post(url, json=payload)
-            if response.status_code == 200:
-                print("✅ Уведомление отправлено в Telegram!")
-                return True
-            else:
-                print(f"❌ Ошибка отправки в Telegram: {response.text}")
-                return False
-        except Exception as e:
-            print(f"❌ Ошибка подключения к Telegram: {e}")
-            return False
+        sent_any = False
+        for chat_id in self.chat_ids:
+            payload = {'chat_id': chat_id, 'text': message, 'parse_mode': 'HTML'}
+            try:
+                response = requests.post(url, json=payload, timeout=10)
+                if response.status_code == 200:
+                    sent_any = True
+                else:
+                    print(f"❌ Ошибка отправки в Telegram (chat {chat_id}): {response.text}")
+            except Exception as e:
+                print(f"❌ Ошибка подключения к Telegram (chat {chat_id}): {e}")
+        return sent_any
     
     def _format_order_message(self, order):
         """Форматирование сообщения для Telegram с правильным отображением вариантов"""

@@ -1,0 +1,59 @@
+{% extends 'content/_base.html' %}
+{% load static %}
+
+{% block title %}{{ article.title }} — Лаборатория ВТ{% endblock %}
+{% block meta_description %}{{ article.excerpt }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ article.title }}{% endblock %}
+{% block og_description %}{{ article.excerpt }}{% endblock %}
+{% block og_image %}{% if article.cover %}{{ request.scheme }}://{{ request.get_host }}{{ article.cover.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'og-image.png' %}{% endif %}{% endblock %}
+
+{% block content_head %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "{{ article.title|escapejs }}",
+    "description": "{{ article.excerpt|escapejs }}",
+    "datePublished": "{{ article.published_at|date:'Y-m-d' }}",
+    {% if article.cover %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ article.cover.url }}",{% endif %}
+    "author": {"@type": "Organization", "name": "{{ site_settings.company_name }}"},
+    "publisher": {
+        "@type": "Organization",
+        "name": "{{ site_settings.company_name }}",
+        "logo": {"@type": "ImageObject", "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.svg' %}"}
+    },
+    "mainEntityOfPage": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div class="container page-head__inner">
+            <div class="crumbs">
+                <a href="{% url 'content:hub' %}">Услуги</a><span>/</span>
+                <a href="{% url 'content:article_list' %}">Статьи</a><span>/</span>{{ article.title }}
+            </div>
+            <span class="tag tag--muted">{{ article.get_direction_display }}</span>
+            <h1 style="margin-top: var(--space-3);">{{ article.title }}</h1>
+            <div class="article-meta"><span>{{ article.published_at|date:"d.m.Y" }}</span></div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            {% if article.cover %}<img class="cover-img" src="{{ article.cover.url }}" alt="{{ article.title }}">{% endif %}
+            <div class="prose">{{ article.body|safe }}</div>
+
+            {% if related %}
+            <div style="margin-top: var(--space-16);">
+                <div class="sec-head"><span class="sec-head__idx">→</span><h2 class="sec-head__title">Ещё по теме</h2></div>
+                <div class="content-grid">
+                    {% for article in related %}{% include 'content/includes/article_card.html' %}{% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

@@ -15,27 +15,21 @@ from django.db.models.functions import Coalesce
 from .models import Category, Product, ProductVariant, ProductImage, Review, Cart, CartItem, Order, OrderItem
 from .cart import CartManager
 from .forms import OrderForm
-from .telegram_service import TelegramService
+from .tasks import send_order_notification, send_order_confirmation
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
-from reportlab.lib.units import mm
-from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from datetime import datetime
 
-# shop/views.py
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def product_list(request, category_path=None):
     """
     Функциональное представление для списка товаров с фильтрацией и сортировкой
     """
-    # Базовый queryset
-    queryset = Product.objects.filter(available=True).select_related('category')
+    # Базовый queryset (prefetch вариантов — устраняем N+1 в свойствах min_price/in_stock)
+    queryset = Product.objects.filter(available=True).select_related('category').prefetch_related('variants')
     
     # Обработка категории
     current_category = None
@@ -129,7 +123,8 @@ def product_list(request, category_path=None):
         queryset = queryset.order_by(order_by)
     
     # ПАГИНАЦИЯ
-    paginate_by = 12
+    from django.conf import settings
+    paginate_by = getattr(settings, 'PRODUCTS_PER_PAGE', 12)
     paginator = Paginator(queryset, paginate_by)
     page_number = request.GET.get('page', 1)
     
@@ -148,16 +143,6 @@ def product_list(request, category_path=None):
         max_price=Max('effective_price')
     )
     
-    # Отладочная информация
-    debug_info = {
-        'total_products': Product.objects.filter(available=True).count(),
-        'filtered_products': queryset.count(),
-        'min_price_param': min_price,
-        'max_price_param': max_price,
-        'sort_param': sort,
-        'search_param': search_query,
-    }
-    debug_info = None
     context = {
         'products': products,
         'categories': Category.get_root_categories(),
@@ -172,9 +157,8 @@ def product_list(request, category_path=None):
             'sort': sort,
             'search': search_query,
         },
-        'debug': debug_info
     }
-    
+
     return render(request, 'product_list.html', context)
 
 class ProductDetailView(DetailView):
@@ -338,12 +322,10 @@ def cart_add(request, product_id):
 @require_POST
 def cart_update(request, variant_id):
     """Обновление количества товара в корзине - ДЛЯ ВАРИАНТОВ"""
-    print(f"DEBUG cart_update: variant_id={variant_id}, POST data: {dict(request.POST)}")
-    
     try:
         action = request.POST.get('action')
         current_quantity = int(request.POST.get('current_quantity', 1))
-        
+
         # Вычисляем новое количество на основе действия
         if action == 'increase':
             quantity = current_quantity + 1
@@ -352,22 +334,18 @@ def cart_update(request, variant_id):
         else:
             # Если действие не распознано, используем переданное количество
             quantity = int(request.POST.get('quantity', current_quantity))
-        
-        print(f"DEBUG cart_update: action={action}, current_quantity={current_quantity}, new_quantity={quantity}")
-        
+
         cart_manager = CartManager(request)
-        
+
         if quantity <= 0:
             return cart_remove(request, variant_id)
-        
+
         success, message = cart_manager.update(variant_id, quantity)
-        
-        print(f"DEBUG cart_update: update result - success={success}, message={message}")
-        
+
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             item_total = '0'
             current_quantity = 0
-            
+
             if success:
                 try:
                     cart_item = CartItem.objects.get(
@@ -376,11 +354,9 @@ def cart_update(request, variant_id):
                     )
                     item_total = str(cart_item.total_price)
                     current_quantity = cart_item.quantity
-                    print(f"DEBUG cart_update: cart_item found - quantity={cart_item.quantity}, total_price={item_total}")
                 except CartItem.DoesNotExist:
-                    print("DEBUG cart_update: CartItem not found after update")
                     pass
-            
+
             response_data = {
                 'success': success,
                 'message': message,
@@ -389,8 +365,7 @@ def cart_update(request, variant_id):
                 'item_total': item_total,
                 'current_quantity': current_quantity
             }
-            
-            print(f"DEBUG cart_update: response data = {response_data}")
+
             return JsonResponse(response_data)
         else:
             if success:
@@ -400,7 +375,6 @@ def cart_update(request, variant_id):
             return redirect('shop:cart_detail')
             
     except Exception as e:
-        print(f"DEBUG cart_update: Error - {str(e)}")
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
@@ -409,6 +383,8 @@ def cart_update(request, variant_id):
         else:
             messages.error(request, f'Ошибка: {str(e)}')
             return redirect('shop:cart_detail')
+
+
 @require_POST
 def cart_remove(request, variant_id):
     """Удаление товара из корзины - ДЛЯ ВАРИАНТОВ"""
@@ -512,10 +488,10 @@ def checkout(request):
                     price=cart_item.price  # Используем цену из корзины
                 )
             
-            # Отправляем уведомление в Telegram
-            telegram_service = TelegramService()
-            telegram_service.send_order_notification(order)
-            
+            # Уведомление в Telegram + письмо-подтверждение покупателю (асинхронно)
+            send_order_notification.delay(order.id)
+            send_order_confirmation.delay(order.id)
+
             # Очищаем корзину
             cart_manager.clear()
             
@@ -526,10 +502,19 @@ def checkout(request):
     else:
         # Предзаполняем форму данными пользователя, если он авторизован
         initial_data = {}
+        if request.user.is_authenticated:
+            initial_data.update({
+                'first_name': request.user.first_name,
+                'last_name': request.user.last_name,
+                'email': request.user.email,
+            })
+            prof = getattr(request.user, 'profile', None)
+            if prof and prof.phone:
+                initial_data['phone'] = prof.display_phone
         customer_data = request.session.get('customer_data', {})
         if customer_data:
             initial_data.update(customer_data)
-        
+
         form = OrderForm(initial=initial_data)
     
     context = {
@@ -544,11 +529,20 @@ def order_success(request, order_id):
     """Страница успешного оформления заказа"""
     try:
         order = Order.objects.get(id=order_id)
-        context = {'order': order}
-        return render(request, 'order_success.html', context)
     except Order.DoesNotExist:
         messages.error(request, "Заказ не найден")
         return redirect('shop:product_list')
+
+    # Проверка прав доступа: владелец заказа или анонимная сессия, оформившая заказ
+    if request.user.is_authenticated:
+        if order.user_id and order.user_id != request.user.id:
+            return HttpResponse("Доступ запрещен", status=403)
+    else:
+        if not order.session_key or order.session_key != request.session.session_key:
+            return HttpResponse("Доступ запрещен", status=403)
+
+    context = {'order': order}
+    return render(request, 'order_success.html', context)
 
 def download_order_pdf(request, order_id):
     """Генерация PDF с русскими буквами используя системные шрифты"""
@@ -624,8 +618,7 @@ def download_order_pdf(request, order_id):
     
     # Дата
     p.setFont(font_name, 10)
-    created_date = order.created_at if hasattr(order, 'created_at') else order.created
-    p.drawString(50, y_position, f"Дата оформления: {created_date.strftime('%d.%m.%Y %H:%M')}")
+    p.drawString(50, y_position, f"Дата оформления: {order.created.strftime('%d.%m.%Y %H:%M')}")
     y_position -= 30
     
     # Разделитель
@@ -752,29 +745,6 @@ def download_order_pdf(request, order_id):
     response['Content-Disposition'] = f'attachment; filename="order_{order.id}.pdf"'
     
     return response
-
-def debug_products(request):
-    """Временная функция для отладки"""
-    products = Product.objects.filter(available=True)
-    print(f"Всего товаров: {products.count()}")
-    print(f"Paginate by: {12}")
-    
-    # Принудительно создаем пагинацию
-    from django.core.paginator import Paginator
-    paginator = Paginator(products, 12)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
-    
-    print(f"Всего страниц: {paginator.num_pages}")
-    print(f"Текущая страница: {page_obj.number}")
-    
-    return render(request, 'product_list.html', {
-        'products': page_obj,
-        'categories': Category.get_root_categories(),
-        'current_category': None,
-        'breadcrumbs': [{'name': 'Все товары', 'url': reverse('shop:product_list')}],
-        'paginate_by': 12
-    })
 
 def credits_view(request):
     return render(request, 'credits.html')

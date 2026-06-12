@@ -1,7 +1,8 @@
 <!-- templates/shop/cart_detail.html -->
 {% extends 'shop.html' %}
 
-{% block title %}Корзина покупок - Магазин{% endblock %}
+{% block title %}Корзина покупок — {{ site_settings.company_name }}{% endblock %}
+{% block robots %}noindex, follow{% endblock %}
 
 {% block content %}
 

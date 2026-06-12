@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Личный кабинет — {{ site_settings.company_name }}{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="profile-head">
+            <div>
+                <span class="eyebrow">// личный кабинет</span>
+                <h1>{% if user.get_full_name %}{{ user.get_full_name }}{% else %}Мой профиль{% endif %}</h1>
+            </div>
+            <div class="profile-head__actions">
+                <a href="{% url 'accounts:profile_edit' %}" class="btn btn--ghost btn--sm">Редактировать</a>
+                <a href="{% url 'accounts:logout' %}" class="btn btn--ghost btn--sm">Выйти</a>
+            </div>
+        </div>
+
+        {% if messages %}
+        <div class="auth-messages">
+            {% for m in messages %}<div class="auth-msg auth-msg--{{ m.tags }}">{{ m }}</div>{% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Контактные данные -->
+        <div class="card profile-card">
+            <h2 class="profile-card__title">Контактные данные</h2>
+            <div class="spec">
+                {% if user.email %}<div class="spec__row"><span class="spec__k">Email</span><span class="spec__v">{{ user.email }}</span></div>{% endif %}
+                {% if user.profile.display_phone %}<div class="spec__row"><span class="spec__k">Телефон</span><span class="spec__v">{{ user.profile.display_phone }}</span></div>{% endif %}
+                {% if user.profile.full_name %}<div class="spec__row"><span class="spec__k">ФИО</span><span class="spec__v">{{ user.profile.full_name }}</span></div>{% endif %}
+            </div>
+        </div>
+
+        <!-- Заказы -->
+        <div class="card profile-card">
+            <h2 class="profile-card__title">Мои заказы</h2>
+            {% if orders %}
+            <div class="profile-orders">
+                {% for order in orders %}
+                <div class="profile-order">
+                    <div class="profile-order__head">
+                        <span class="profile-order__num">Заказ #{{ order.id }}</span>
+                        <span class="profile-order__date">{{ order.created|date:"d.m.Y H:i" }}</span>
+                        <span class="tag tag--muted">{{ order.get_status_display }}</span>
+                        <span class="profile-order__sum">{{ order.total_price }} ₽</span>
+                    </div>
+                    <ul class="profile-order__items">
+                        {% for item in order.items.all %}
+                        <li>{{ item.product_variant.product.name }}{% if item.product_variant.name %} — {{ item.product_variant.name }}{% endif %} · {{ item.quantity }} × {{ item.price }} ₽</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-note">Заказов пока нет. <a href="{% url 'shop:product_list' %}">Перейти в магазин →</a></div>
+            {% endif %}
+        </div>
+
+        <!-- Отзывы -->
+        <div class="card profile-card">
+            <h2 class="profile-card__title">Мои отзывы</h2>
+            {% if reviews %}
+            <div class="profile-reviews">
+                {% for review in reviews %}
+                <div class="profile-review">
+                    <div class="profile-review__head">
+                        <a href="{{ review.product.get_absolute_url }}">{{ review.product.name }}</a>
+                        <span class="profile-review__stars">{{ review.get_rating_stars }}</span>
+                        <span class="profile-review__date">{{ review.created|date:"d.m.Y" }}</span>
+                    </div>
+                    <p class="profile-review__text">{{ review.comment }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-note">Вы пока не оставляли отзывов.</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

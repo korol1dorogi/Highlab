@@ -311,12 +311,10 @@ class LaudLinkAdapter:
                 if main_image_file:
                     product.main_image.save(main_image_file.name, main_image_file, save=True)
             
-            # Добавляем дополнительные изображения
+            # Добавляем дополнительные изображения только если их ещё нет
+            # (идемпотентно — повторный импорт не перекачивает уже загруженные)
             image_urls = product_data.get('images', [])
-            if image_urls:
-                # Удаляем старые изображения перед добавлением новых
-                product.images.all().delete()
-                
+            if image_urls and not product.images.exists():
                 for i, image_url in enumerate(image_urls[:10]):  # Ограничиваем 10 изображениями
                     image_file = download_image_from_url(image_url, f"{product_data['name']}_{i}")
                     if image_file:

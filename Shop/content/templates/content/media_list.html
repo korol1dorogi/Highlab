@@ -1,0 +1,35 @@
+{% extends 'content/_base.html' %}
+
+{% block title %}Медиа и упоминания — Лаборатория ВТ{% endblock %}
+{% block meta_description %}Конкурсы, награды, интервью и публикации в СМИ — Лаборатория ВТ.{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div class="container page-head__inner">
+            <div class="crumbs"><a href="{% url 'content:hub' %}">Услуги</a><span>/</span>Медиа</div>
+            <span class="eyebrow">// конкурсы · награды · интервью · СМИ</span>
+            <h1>Медиа и упоминания</h1>
+            <p class="page-head__intro">Наше участие в конкурсах, награды, интервью и публикации в СМИ.</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="media-list">
+                {% for item in media_items %}
+                <div class="media-row">
+                    <div class="media-row__date">{{ item.date|date:"d.m.Y" }}</div>
+                    <div>
+                        <span class="tag tag--muted">{{ item.get_kind_display }}</span>
+                        <div class="media-row__title">{{ item.title }}</div>
+                        {% if item.description %}<div class="media-row__desc">{{ item.description }}</div>{% endif %}
+                    </div>
+                    {% if item.external_url %}<a class="btn btn--ghost btn--sm" href="{{ item.external_url }}" target="_blank" rel="noopener">Открыть</a>{% else %}<span></span>{% endif %}
+                </div>
+                {% empty %}
+                <div class="empty-note">Упоминания, конкурсы и интервью появятся здесь.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

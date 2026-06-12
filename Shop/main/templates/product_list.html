@@ -1,8 +1,9 @@
 {% extends 'shop.html' %}
 
-{% block title %}
-    {% if current_category %}{{ current_category.name }}{% else %}Все товары{% endif %} - Магазин
-{% endblock %}
+{% block title %}{% if current_category %}{{ current_category.name }} — купить в Курске{% else %}Каталог техники и комплектующих{% endif %} | {{ site_settings.company_name }}{% endblock %}
+{% block meta_description %}{% if current_category and current_category.description %}{{ current_category.description|striptags|truncatechars:160 }}{% elif current_category %}{{ current_category.name }} в магазине Лаборатории ВТ, Курск — проверенные товары с гарантией качества от мастеров.{% else %}Каталог Лаборатории ВТ: комплектующие, оборудование и Б/У техника с гарантией мастеров. Курск.{% endif %}{% endblock %}
+{% block og_title %}{% if current_category %}{{ current_category.name }}{% else %}Каталог{% endif %} — {{ site_settings.company_name }}{% endblock %}
+{% block og_description %}{% if current_category and current_category.description %}{{ current_category.description|striptags|truncatechars:200 }}{% else %}Проверенные комплектующие и техника с гарантией мастеров — Курск.{% endif %}{% endblock %}
 
 {% block content %}
 <!-- Хлебные крошки -->
@@ -20,30 +21,19 @@
     </ol>
 </nav>
 {% endif %}
-<!-- Добавьте этот блок после заголовка для отладки -->
-{% if debug %}
-<div class="alert alert-warning">
-    <h6>Отладочная информация:</h6>
-    <p>Всего товаров в базе: {{ debug.total_products }}</p>
-    <p>Товаров после фильтров: {{ debug.filtered_products }}</p>
-    <p>Min price: {{ current_filters.min_price }}</p>
-    <p>Max price: {{ current_filters.max_price }}</p>
-    <p>Sort: {{ current_filters.sort }}</p>
-</div>
-{% endif %}
-<div class="row">
+<div class="shop-layout">
     <!-- Сайдбар с категориями -->
-    <div class="col-md-3">
+    <aside class="shop-sidebar">
         <div class="sticky-sidebar-container">
             <div class="card category-sidebar">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header">
                     <h5 class="mb-0"><i class="bi bi-list"></i> Категории</h5>
                 </div>
                 <div class="card-body">
-                    <a href="{% url 'shop:product_list' %}" 
-                       class="d-block mb-3 p-2 border rounded {% if not current_category %}bg-primary text-white{% else %}bg-light{% endif %} text-decoration-none">
+                    <a href="{% url 'shop:product_list' %}"
+                       class="sidebar-all-link d-block mb-3 p-2 text-decoration-none {% if not current_category %}bg-primary{% endif %}">
                         <i class="bi bi-grid-3x3-gap"></i> Все товары
-                        <span class="badge {% if not current_category %}bg-light text-dark{% else %}bg-primary{% endif %} float-end">{{ products.paginator.count }}</span>
+                        <span class="badge bg-secondary float-end">{{ products.paginator.count }}</span>
                     </a>
                     
                     <div class="categories-tree">
@@ -55,133 +45,91 @@
             </div>
     
             <!-- Дополнительная информация -->
-            <div class="card mt-3">
+            <div class="card sidebar-promo mt-3">
                 <div class="card-body">
-                    <h6 class="card-title"><i class="bi bi-truck"></i> <a href= "/credits"> Юридическая информация и правила доставки </a></h6>
-                    <h6 class="card-title"><i class="bi bi-shield-check"></i> Гарантия качества</h6>
+                    <h6 class="card-title mb-2"><i class="bi bi-truck text-primary"></i> <a href="{% url 'shop:credits' %}" class="text-decoration-none">Доставка и правила</a></h6>
+                    <h6 class="card-title mb-0"><i class="bi bi-shield-check text-primary"></i> Гарантия качества от мастеров</h6>
                 </div>
             </div>
         </div>
-    </div>
+    </aside>
 
     <!-- Основной контент -->
-<!-- Основной контент -->
-<div class="col-md-9">
+    <div class="shop-main">
     <!-- Заголовок и информация -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="shop-pagehead d-flex justify-content-between align-items-end flex-wrap gap-2">
         <div>
-            <h1 class="h3 mb-1">
+            <h1>
                 {% if current_category %}
                     {{ current_category.name }}
                 {% else %}
                     Все товары
                 {% endif %}
             </h1>
-            <p class="text-muted mb-0">
-                Найдено товаров: <strong>{{ products.paginator.count }}</strong>
+            <p class="lead-count mb-0">
+                Найдено: <strong>{{ products.paginator.count }}</strong>
                 {% if current_category and current_category.parent %}
-                    в категории "{{ current_category.name }}"
+                    в категории «{{ current_category.name }}»
                 {% endif %}
             </p>
         </div>
-        
+
         <!-- Информация о странице -->
         {% if products.paginator.num_pages > 1 %}
-        <div class="text-muted small">
-            Страница {{ products.number }} из {{ products.paginator.num_pages }}
+        <div class="lead-count">
+            Страница <strong>{{ products.number }}</strong> из <strong>{{ products.paginator.num_pages }}</strong>
         </div>
         {% endif %}
     </div>
 
+    {% if current_category and current_category.description %}
+    <div class="category-intro">{{ current_category.description|linebreaks }}</div>
+    {% endif %}
+
     <!-- БЛОК ФИЛЬТРОВ И СОРТИРОВКИ -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" id="filter-form" class="row g-3 align-items-end">
-                <!-- Скрытые поля для сохранения поиска и категории -->
-                {% if request.GET.search %}
-                <input type="hidden" name="search" value="{{ request.GET.search }}">
-                {% endif %}
-                
-                <!-- Фильтр по цене -->
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">Цена</label>
-                    <div class="input-group input-group-sm">
-                        <input type="number" 
-                               name="min_price" 
-                               class="form-control" 
-                               placeholder="От"
-                               value="{{ request.GET.min_price|default:'' }}"
-                               min="0">
-                        <span class="input-group-text">-</span>
-                        <input type="number" 
-                               name="max_price" 
-                               class="form-control" 
-                               placeholder="До"
-                               value="{{ request.GET.max_price|default:'' }}"
-                               min="0">
-                    </div>
-                    {% if price_range.min_price and price_range.max_price %}
-                    <div class="form-text">
-                        Диапазон: {{ price_range.min_price|floatformat:0 }} - {{ price_range.max_price|floatformat:0 }} ₽
-                    </div>
-                    {% endif %}
+    <div class="filter-card">
+        <form method="get" id="filter-form" class="shop-filter">
+            {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">{% endif %}
+
+            <div class="shop-filter__group">
+                <label class="shop-filter__label">Цена, ₽</label>
+                <div class="shop-filter__price">
+                    <input type="number" name="min_price" class="form-control form-control-sm" placeholder="От" value="{{ request.GET.min_price|default:'' }}" min="0">
+                    <span class="shop-filter__dash">–</span>
+                    <input type="number" name="max_price" class="form-control form-control-sm" placeholder="До" value="{{ request.GET.max_price|default:'' }}" min="0">
                 </div>
-    
-                <!-- Режим фильтрации цены -->
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Режим фильтрации</label>
-                    <select name="price_mode" class="form-select form-select-sm">
-                        <option value="strict" {% if request.GET.price_mode == 'strict' or not request.GET.price_mode %}selected{% endif %}>
-                            Строгий
-                        </option>
-                        <option value="smart" {% if request.GET.price_mode == 'smart' %}selected{% endif %}>
-                            Интеллектуальный (±10%)
-                        </option>
-                    </select>
-                </div>
-    
-                <!-- Сортировка -->
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Сортировка</label>
-                    <select name="sort" class="form-select form-select-sm">
-                        <option value="default" {% if request.GET.sort == 'default' or not request.GET.sort %}selected{% endif %}>
-                            По умолчанию
-                        </option>
-                        <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>
-                            Цена по возрастанию
-                        </option>
-                        <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>
-                            Цена по убыванию
-                        </option>
-                        <option value="name_asc" {% if request.GET.sort == 'name_asc' %}selected{% endif %}>
-                            Название А-Я
-                        </option>
-                        <option value="name_desc" {% if request.GET.sort == 'name_desc' %}selected{% endif %}>
-                            Название Я-А
-                        </option>
-                        <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>
-                            По популярности
-                        </option>
-                    </select>
-                </div>
-    
-                <!-- Кнопки -->
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100 mb-1">
-                        <i class="bi bi-funnel"></i> Применить
-                    </button>
-                    <a href="{% if current_category %}{{ current_category.get_absolute_url }}{% else %}{% url 'shop:product_list' %}{% endif %}" 
-                       class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="bi bi-arrow-clockwise"></i> Сбросить
-                    </a>
-                </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="shop-filter__group">
+                <label class="shop-filter__label">Режим цены</label>
+                <select name="price_mode" class="form-select form-select-sm">
+                    <option value="strict" {% if request.GET.price_mode == 'strict' or not request.GET.price_mode %}selected{% endif %}>Строгий</option>
+                    <option value="smart" {% if request.GET.price_mode == 'smart' %}selected{% endif %}>Интеллектуальный (±10%)</option>
+                </select>
+            </div>
+
+            <div class="shop-filter__group">
+                <label class="shop-filter__label">Сортировка</label>
+                <select name="sort" class="form-select form-select-sm">
+                    <option value="default" {% if request.GET.sort == 'default' or not request.GET.sort %}selected{% endif %}>По умолчанию</option>
+                    <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Цена ↑</option>
+                    <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Цена ↓</option>
+                    <option value="name_asc" {% if request.GET.sort == 'name_asc' %}selected{% endif %}>Название А-Я</option>
+                    <option value="name_desc" {% if request.GET.sort == 'name_desc' %}selected{% endif %}>Название Я-А</option>
+                    <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>По популярности</option>
+                </select>
+            </div>
+
+            <div class="shop-filter__group shop-filter__actions">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Применить</button>
+                <a href="{% if current_category %}{{ current_category.get_absolute_url }}{% else %}{% url 'shop:product_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+            </div>
+        </form>
     </div>
 
     <!-- Активные фильтры -->
     {% if current_filters.min_price or current_filters.max_price or current_filters.sort != 'default' %}
-    <div class="alert alert-info py-2 mb-4">
+    <div class="active-filters py-2 px-3 mb-4">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <strong>Активные фильтры:</strong>
@@ -228,9 +176,7 @@
     {% if products %}
     <div class="product-grid">
         {% for product in products %}
-        <div class="product-col">
             {% include 'includes/product_card.html' with product=product %}
-        </div>
         {% endfor %}
     </div>
 
@@ -240,9 +186,9 @@
     {% endif %}
 
     {% else %}
-    <div class="text-center py-5">
-        <i class="bi bi-search display-1 text-muted"></i>
-        <h3 class="text-muted mt-3">Товары не найдены</h3>
+    <div class="shop-empty">
+        <i class="bi bi-search display-1"></i>
+        <h3>Товары не найдены</h3>
         <p class="text-muted">Попробуйте изменить критерии поиска или выбрать другую категорию</p>
         <div class="mt-4">
             <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
@@ -254,58 +200,23 @@
         </div>
     </div>
     {% endif %}
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Автоматически раскрываем категории, если есть текущая категория
+    // Автоматически раскрываем родительские категории текущего раздела
     const currentPath = window.location.pathname;
     if (currentPath.includes('/category/')) {
-        console.log('Current category path:', currentPath);
-        
-        // Попробуем найти и раскрыть родительские категории
         setTimeout(() => {
             const currentCategoryLinks = document.querySelectorAll(`a[href="${currentPath}"]`);
             currentCategoryLinks.forEach(link => {
-                let parentCollapse = link.closest('.subcategories.collapse');
+                let parentCollapse = link.closest('.cat-sub.collapse');
                 while (parentCollapse) {
-                    const collapseId = parentCollapse.id;
-                    const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
-                    if (toggleButton && !toggleButton.classList.contains('collapsed')) {
-                        const bsCollapse = new bootstrap.Collapse(parentCollapse, {
-                            toggle: true
-                        });
-                    }
-                    parentCollapse = parentCollapse.parentElement.closest('.subcategories.collapse');
-                }
-            });
-        }, 100);
-    }
-});
-
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Автоматически раскрываем категории, если есть текущая категория
-    const currentPath = window.location.pathname;
-    if (currentPath.includes('/category/')) {
-        console.log('Current category path:', currentPath);
-        
-        // Попробуем найти и раскрыть родительские категории
-        setTimeout(() => {
-            const currentCategoryLinks = document.querySelectorAll(`a[href="${currentPath}"]`);
-            currentCategoryLinks.forEach(link => {
-                let parentCollapse = link.closest('.subcategories.collapse');
-                while (parentCollapse) {
-                    const collapseId = parentCollapse.id;
-                    const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
-                    if (toggleButton && !toggleButton.classList.contains('collapsed')) {
-                        const bsCollapse = new bootstrap.Collapse(parentCollapse, {
-                            toggle: true
-                        });
-                    }
-                    parentCollapse = parentCollapse.parentElement.closest('.subcategories.collapse');
+                    new bootstrap.Collapse(parentCollapse, { toggle: true });
+                    parentCollapse = parentCollapse.parentElement.closest('.cat-sub.collapse');
                 }
             });
         }, 100);

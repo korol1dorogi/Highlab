@@ -1,0 +1,24 @@
+<header class="site-header">
+    <div class="container site-header__inner">
+        <a href="/" class="site-logo">
+            <span class="site-logo__mark">ВТ</span>
+            <span class="site-logo__text">{{ site_settings.company_name }}</span>
+        </a>
+
+        <button class="nav-toggle" aria-label="Открыть меню" aria-expanded="false">≡</button>
+
+        <nav class="site-nav">
+            <a href="/">Главная</a>
+            <a href="/service/">Услуги и кейсы</a>
+            <a href="/shop_electronic/">Магазин</a>
+            <a href="/#contacts">Контакты</a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'accounts:profile' %}" class="site-nav__account">Профиль</a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}" class="site-nav__account">Войти</a>
+            {% endif %}
+        </nav>
+
+        <a href="/#contacts" class="btn btn--primary btn--sm site-header__cta">Связаться</a>
+    </div>
+</header>

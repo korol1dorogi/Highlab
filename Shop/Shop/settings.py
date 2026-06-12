@@ -21,12 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0', cast=Csv())
+
+# Доверенные источники для CSRF (нужно при доступе через HTTPS-туннель, напр. Cloudflare).
+# Формат значений: со схемой, можно с поддоменным шаблоном — https://*.trycloudflare.com
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 
 
 # Application definition
@@ -38,12 +42,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'main',
-    'main2',
     'index',
+    'content',
+    'accounts',
     'mptt',
     'easy_pdf',
-    
+    'django_ckeditor_5',
+
 ]
 
 MIDDLEWARE = [
@@ -62,14 +69,15 @@ ROOT_URLCONF = 'Shop.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'main.context_processors.cart_quantity'
+                'main.context_processors.cart_quantity',
+                'index.context_processors.site_settings',
             ],
         },
     },
@@ -81,12 +89,26 @@ WSGI_APPLICATION = 'Shop.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# По умолчанию — sqlite (локальная разработка). В Docker/прод задаётся через переменные
+# окружения (POSTGRES_*) и используется PostgreSQL.
+if config('POSTGRES_DB', default=''):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('POSTGRES_DB'),
+            'USER': config('POSTGRES_USER', default='postgres'),
+            'PASSWORD': config('POSTGRES_PASSWORD', default=''),
+            'HOST': config('POSTGRES_HOST', default='db'),
+            'PORT': config('POSTGRES_PORT', default='5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -135,10 +157,72 @@ WHITENOISE_ALLOW_ALL_ORIGINS = True
 
 
 PRODUCTS_PER_PAGE = 12
+
+# --- CKEditor 5 (rich-text для статей и кейсов) ---
+customColorPalette = []
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': [
+            'heading', '|',
+            'bold', 'italic', 'link', 'underline',
+            'bulletedList', 'numberedList', 'blockQuote', '|',
+            'imageUpload', 'insertTable', '|',
+            'undo', 'redo',
+        ],
+        'image': {
+            'toolbar': [
+                'imageTextAlternative', '|',
+                'imageStyle:alignLeft', 'imageStyle:alignRight', 'imageStyle:full',
+            ],
+        },
+        'table': {
+            'contentToolbar': ['tableColumn', 'tableRow', 'mergeTableCells'],
+        },
+    },
+}
+CKEDITOR_5_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+CKEDITOR_5_UPLOAD_FILE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'webp']
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = config('TELEGRAM_ADMIN_ID', cast=int)
+# --- Аутентификация (вход по email или телефону) ---
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailOrPhoneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/accounts/profile/'
+LOGOUT_REDIRECT_URL = '/'
+
+TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
+# Список ID администраторов (через запятую). Поддерживаем и старый TELEGRAM_ADMIN_ID.
+TELEGRAM_CHAT_IDS = [
+    int(x) for x in config('TELEGRAM_ADMIN_IDS', default=config('TELEGRAM_ADMIN_ID', default=''), cast=Csv())
+    if str(x).strip() and str(x).strip() != '0'
+]
+# Обратная совместимость: первый ID как одиночный chat_id
+TELEGRAM_CHAT_ID = TELEGRAM_CHAT_IDS[0] if TELEGRAM_CHAT_IDS else 0
+
+# --- Email ---
+# По умолчанию письма печатаются в консоль (работает без SMTP).
+# Для боевой отправки задайте в .env: EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend + хост/логин/пароль.
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Лаборатория ВТ <noreply@laboratoriya-vt.ru>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# --- Celery ---
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/1')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+# Если брокер недоступен (например, локально без Redis) — задачи выполнятся синхронно.
+CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', default=False, cast=bool)

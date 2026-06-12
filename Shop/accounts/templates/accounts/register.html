@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация — {{ site_settings.company_name }}{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="auth-card card">
+            <h1 class="auth-card__title">Регистрация</h1>
+            <p class="auth-card__sub">Укажите <b>email или телефон</b> и пароль. ФИО — по желанию.</p>
+
+            <form method="post" novalidate class="auth-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="auth-error">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="auth-field">{{ form.email }}{% if form.email.errors %}<div class="auth-field__err">{{ form.email.errors }}</div>{% endif %}</div>
+                <div class="auth-field">{{ form.phone }}{% if form.phone.errors %}<div class="auth-field__err">{{ form.phone.errors }}</div>{% endif %}</div>
+
+                <div class="auth-grid">
+                    <div class="auth-field">{{ form.last_name }}</div>
+                    <div class="auth-field">{{ form.first_name }}</div>
+                </div>
+                <div class="auth-field">{{ form.middle_name }}</div>
+
+                <div class="auth-field">{{ form.password1 }}{% if form.password1.errors %}<div class="auth-field__err">{{ form.password1.errors }}</div>{% endif %}</div>
+                <div class="auth-field">{{ form.password2 }}{% if form.password2.errors %}<div class="auth-field__err">{{ form.password2.errors }}</div>{% endif %}</div>
+
+                <div class="auth-field auth-captcha">
+                    <label class="auth-captcha__label">Сколько будет <b>{{ captcha_question }}</b>?</label>
+                    {{ form.captcha }}
+                    {% if form.captcha.errors %}<div class="auth-field__err">{{ form.captcha.errors }}</div>{% endif %}
+                </div>
+
+                <div class="hp-wrap">{{ form.website }}</div>
+
+                <button type="submit" class="btn btn--primary btn--lg auth-submit">Создать аккаунт</button>
+            </form>
+
+            <p class="auth-alt">Уже есть аккаунт? <a href="{% url 'accounts:login' %}">Войти</a></p>
+        </div>
+    </div>
+</section>
+{% endblock %}

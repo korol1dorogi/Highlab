@@ -1,0 +1,13 @@
+<a href="{{ article.get_absolute_url }}" class="post-card">
+    {% if article.cover %}
+    <img class="post-card__cover" src="{{ article.cover.url }}" alt="{{ article.title }}">
+    {% else %}
+    <div class="post-card__ph">// статья</div>
+    {% endif %}
+    <div class="post-card__body">
+        <span class="tag tag--muted">{{ article.get_direction_display }}</span>
+        <h3>{{ article.title }}</h3>
+        <p class="post-card__excerpt">{{ article.excerpt }}</p>
+        <div class="post-card__meta"><span>{{ article.published_at|date:"d.m.Y" }}</span></div>
+    </div>
+</a>

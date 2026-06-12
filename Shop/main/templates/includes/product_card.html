@@ -1,112 +1,59 @@
 <!-- templates/includes/product_card.html -->
-<div class="card product-card h-100">
-    {% if product.has_discount %}
-    <span class="position-absolute top-0 start-0 badge bg-danger m-2" style="z-index: 1;">Скидка</span>
-    {% endif %}
-    
-    <!-- Адаптивное изображение с lazy loading -->
-    <div class="product-image-mobile d-md-none text-center">
-        <img 
-            {% if product.main_image %}
-            data-src="{{ product.main_image.url }}"
-            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='375' viewBox='0 0 300 375'%3E%3Crect width='300' height='375' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EЗагрузка...%3C/text%3E%3C/svg%3E"
-            {% else %}
-            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='375' viewBox='0 0 300 375'%3E%3Crect width='300' height='375' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EНет изображения%3C/text%3E%3C/svg%3E"
-            {% endif %}
-            alt="{{ product.name }}"
-            class="lazy-image img-fluid"
-            loading="lazy"
-            style="max-height: 200px; width: auto;"
-        >
-    </div>
-    
-    <!-- Десктопная версия изображения -->
-    <div class="product-image-desktop d-none d-md-block text-center">
-        <img 
-            {% if product.main_image %}
-            data-src="{{ product.main_image.url }}"
-            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EЗагрузка...%3C/text%3E%3C/svg%3E"
-            {% else %}
-            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%236c757d'%3EНет изображения%3C/text%3E%3C/svg%3E"
-            {% endif %}
-            alt="{{ product.name }}"
-            class="lazy-image img-fluid"
-            loading="lazy"
-            style="max-height: 180px; width: auto;"
-        >
-    </div>
-    
-    <div class="card-body d-flex flex-column">
-        <h6 class="card-title">{{ product.name }}</h6>
-        <p class="card-text text-muted small mb-2">{{ product.category.name }}</p>
-        
-        <!-- Краткое описание (только на мобильных) -->
-        <div class="d-md-none small text-muted mb-2">
-            {{ product.description|truncatewords:12 }}
-        </div>
-        
-        <!-- Информация о вариантах -->
-        {% if product.variants.all %}
-            <div class="variants-info mb-2">
-                <small class="text-muted">
-                    {% if product.variants.count == 1 %}
-                        {% with variant=product.variants.first %}
-                            {% if variant.name %}{{ variant.name }}{% endif %}
-                        {% endwith %}
-                    {% else %}
-                        {{ product.variants.count }} вариантов
-                    {% endif %}
-                </small>
-            </div>
+{% load shop_extras %}
+<div class="pcard">
+    <a class="pcard__media" href="{% url 'shop:product_detail' product.slug %}">
+        {% if product.has_discount %}<span class="pcard__badge">−{{ product.discount_percent|floatformat:0 }}%</span>{% endif %}
+        {% if product.main_image %}
+        <img class="pcard__img lazy-image"
+             data-src="{% thumb product.main_image 400 %}"
+             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E"
+             alt="{{ product.name }}" loading="lazy">
+        {% else %}
+        <div class="pcard__noimg">нет фото</div>
         {% endif %}
-        
-        <div class="mt-auto">
-            <div class="price mb-2">
-                {% if product.has_discount %}
-                <div>
-                    <span class="price-old me-2 small">{{ product.old_price }} ₽</span>
-                    <span class="price-new fw-bold">{{ product.base_price }} ₽</span>
-                </div>
+    </a>
+    <div class="pcard__body">
+        <div class="pcard__cat">{{ product.category.name }}</div>
+        <a class="pcard__title" href="{% url 'shop:product_detail' product.slug %}">{{ product.name }}</a>
+        {% if product.variants.count > 1 %}
+        <div class="pcard__variants">{{ product.variants.count }} вариант{{ product.variants.count|pluralize:"а,ов" }}</div>
+        {% endif %}
+
+        <div class="pcard__price">
+            {% if product.has_discount %}
+                <span class="pcard__price-now">{{ product.base_price }} ₽</span>
+                <span class="pcard__price-old">{{ product.old_price }} ₽</span>
+            {% elif product.variants.count > 1 %}
+                <span class="pcard__price-now">от {{ product.min_price }} ₽</span>
+            {% else %}
+                <span class="pcard__price-now">{{ product.base_price }} ₽</span>
+            {% endif %}
+        </div>
+
+        <div class="pcard__actions">
+            {% if product.in_stock %}
+                {% if product.variants.count == 1 %}
+                    {% with variant=product.variants.first %}
+                    <form method="post" action="{% url 'shop:cart_add' product.id %}" class="add-to-cart-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="quantity" value="1">
+                        <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-cart-plus"></i> В корзину
+                        </button>
+                    </form>
+                    {% endwith %}
                 {% else %}
-                <span class="fw-bold">
-                    {% if product.variants.count > 1 %}
-                        от {{ product.min_price }} ₽
-                    {% else %}
-                        {{ product.base_price }} ₽
-                    {% endif %}
-                </span>
+                    <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-success btn-sm w-100">
+                        <i class="bi bi-sliders"></i> Выбрать вариант
+                    </a>
                 {% endif %}
-            </div>
-            
-            <div class="d-grid gap-1">
-                {% if product.in_stock %}
-                    {% if product.variants.count == 1 %}
-                        <!-- Если только один вариант, добавляем сразу -->
-                        {% with variant=product.variants.first %}
-                        <form method="post" action="{% url 'shop:cart_add' product.id %}" class="add-to-cart-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="quantity" value="1">
-                            <input type="hidden" name="variant_id" value="{{ variant.id }}">
-                            <button type="submit" class="btn btn-success btn-sm w-100">
-                                <i class="bi bi-cart-plus"></i> В корзину
-                            </button>
-                        </form>
-                        {% endwith %}
-                    {% else %}
-                        <!-- Если несколько вариантов, ведем на страницу товара -->
-                        <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-eye"></i> Выбрать вариант
-                        </a>
-                    {% endif %}
-                {% else %}
-                <button class="btn btn-secondary btn-sm w-100" disabled>
-                    Нет в наличии
-                </button>
-                {% endif %}
-                <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="bi bi-eye"></i> Подробнее
-                </a>
-            </div>
+            {% else %}
+                <button class="btn btn-secondary btn-sm w-100" disabled>Нет в наличии</button>
+            {% endif %}
+            <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-outline-primary btn-sm w-100">
+                Подробнее
+            </a>
         </div>
     </div>
 </div>

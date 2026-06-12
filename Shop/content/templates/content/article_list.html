@@ -1,0 +1,34 @@
+{% extends 'content/_base.html' %}
+
+{% block title %}Статьи и база знаний — Лаборатория ВТ{% endblock %}
+{% block meta_description %}Статьи Лаборатории ВТ: автоматизация АСУ ТП, разработка ПО, ремонт и восстановление техники.{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div class="container page-head__inner">
+            <div class="crumbs"><a href="{% url 'content:hub' %}">Услуги</a><span>/</span>Статьи</div>
+            <span class="eyebrow">// база знаний</span>
+            <h1>Статьи и база знаний</h1>
+            <p class="page-head__intro">Экспертные материалы по нашим направлениям.</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="chips">
+                <a class="chip {% if not active_direction %}is-active{% endif %}" href="{% url 'content:article_list' %}">Все</a>
+                {% for key, label in directions %}
+                <a class="chip {% if active_direction == key %}is-active{% endif %}" href="?direction={{ key }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+
+            <div class="content-grid">
+                {% for article in articles %}
+                    {% include 'content/includes/article_card.html' %}
+                {% empty %}
+                <div class="empty-note">По выбранному направлению статей пока нет.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

@@ -14,6 +14,7 @@ env/
 *.env
 .env.*
 .venv
+!.env.example
 
 # Django
 __pycache__/
@@ -23,3 +24,9 @@ __pycache__/
 .Python
 media/
 staticfiles/
+
+# Временные артефакты (туннели, фоновые логи)
+*.log
+*.out
+cloudflared.*
+pinggy.*

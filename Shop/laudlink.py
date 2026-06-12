@@ -832,8 +832,9 @@ class LaudLinkParser:
         
         return all_products
 
-    def parse_all_products(self, categories_with_subcategories):
-        """Парсит все товары из всех категорий и подкатегорий с поддержкой вариантов"""
+    def parse_all_products(self, categories_with_subcategories, limit=None):
+        """Парсит все товары из всех категорий и подкатегорий с поддержкой вариантов.
+        limit — необязательное ограничение числа товаров (для тестовых прогонов)."""
         all_products_dict = {}  # Используем dict для объединения товаров по ID
         
         for category in categories_with_subcategories:
@@ -867,7 +868,11 @@ class LaudLinkParser:
                     # Объединяем данные
                     full_product_data = {**product, **details}
                     all_products_dict[product_id] = full_product_data
-            
+
+                    if limit and len(all_products_dict) >= limit:
+                        logger.info(f"Достигнут лимит товаров ({limit}) — останавливаемся.")
+                        return list(all_products_dict.values())
+
             # Парсим товары из подкатегорий
             for subcategory in subcategories:
                 subcategory_name = subcategory['name']
@@ -900,7 +905,11 @@ class LaudLinkParser:
                         # Объединяем данные
                         full_product_data = {**product, **details}
                         all_products_dict[product_id] = full_product_data
-        
+
+                        if limit and len(all_products_dict) >= limit:
+                            logger.info(f"Достигнут лимит товаров ({limit}) — останавливаемся.")
+                            return list(all_products_dict.values())
+
         return list(all_products_dict.values())
 
     def save_to_json(self, data, filename):
@@ -910,14 +919,31 @@ class LaudLinkParser:
         logger.info(f"Данные сохранены в {filename}")
 
 def main():
+    import argparse
+    import os
+
+    ap = argparse.ArgumentParser(description='Парсер интернет-магазина laudlink.ru')
+    ap.add_argument('--limit', type=int, default=None,
+                    help='Ограничить число товаров (для тестового прогона)')
+    ap.add_argument('--output-dir', default='.',
+                    help='Папка для сохранения JSON (по умолчанию текущая)')
+    args = ap.parse_args()
+
+    out_dir = args.output_dir
+    os.makedirs(out_dir, exist_ok=True)
+    categories_path = os.path.join(out_dir, 'categories_structure.json')
+    products_path = os.path.join(out_dir, 'all_products_with_variants.json')
+
     parser = LaudLinkParser()
-    
+
     logger.info("Начинаем парсинг сайта laudlink.ru...")
-    
+    if args.limit:
+        logger.info(f"Режим теста: лимит {args.limit} товаров")
+
     # 1. Парсим основные категории
     categories = parser.parse_categories()
     logger.info(f"Найдено основных категорий: {len(categories)}")
-    
+
     # 2. Парсим подкатегории для каждой категории
     categories_with_subcategories = []
     for category in categories:
@@ -926,16 +952,16 @@ def main():
         category['subcategories'] = subcategories
         categories_with_subcategories.append(category)
         time.sleep(1)  # Задержка между категориями
-    
+
     # Сохраняем структуру категорий
-    parser.save_to_json(categories_with_subcategories, 'categories_structure.json')
-    
+    parser.save_to_json(categories_with_subcategories, categories_path)
+
     # 3. Парсим все товары с поддержкой вариантов (из всех категорий и подкатегорий)
     logger.info("\nНачинаем парсинг товаров с вариантами...")
-    all_products = parser.parse_all_products(categories_with_subcategories)
-    
+    all_products = parser.parse_all_products(categories_with_subcategories, limit=args.limit)
+
     # 4. Сохраняем товары
-    parser.save_to_json(all_products, 'all_products_with_variants.json')
+    parser.save_to_json(all_products, products_path)
     
     # Статистика
     total_products = len(all_products)

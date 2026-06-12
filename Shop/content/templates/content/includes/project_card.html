@@ -1,0 +1,13 @@
+<a href="{{ project.get_absolute_url }}" class="post-card">
+    {% if project.cover %}
+    <img class="post-card__cover" src="{{ project.cover.url }}" alt="{{ project.title }}">
+    {% else %}
+    <div class="post-card__ph">// кейс</div>
+    {% endif %}
+    <div class="post-card__body">
+        <span class="tag">{{ project.get_direction_display }}</span>
+        <h3>{{ project.title }}</h3>
+        <p class="post-card__excerpt">{{ project.summary }}</p>
+        <div class="post-card__meta"><span>{{ project.published_at|date:"d.m.Y" }}</span></div>
+    </div>
+</a>

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход — {{ site_settings.company_name }}{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="auth-card card">
+            <h1 class="auth-card__title">Вход</h1>
+            <p class="auth-card__sub">Введите email или телефон и пароль.</p>
+
+            {% if messages %}
+            <div class="auth-messages">
+                {% for m in messages %}<div class="auth-msg auth-msg--{{ m.tags }}">{{ m }}</div>{% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" novalidate class="auth-form">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+                {% if form.non_field_errors %}<div class="auth-error">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="auth-field">{{ form.login }}</div>
+                <div class="auth-field">{{ form.password }}</div>
+                <div class="hp-wrap">{{ form.website }}</div>
+
+                <button type="submit" class="btn btn--primary btn--lg auth-submit">Войти</button>
+            </form>
+
+            <p class="auth-alt"><a href="{% url 'accounts:password_reset' %}">Забыли пароль?</a></p>
+            <p class="auth-alt">Нет аккаунта? <a href="{% url 'accounts:register' %}">Зарегистрироваться</a></p>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -4,7 +4,7 @@
 {% block title %}Доставка и оплата | Интернет-магазин{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row credits-page">
     <!-- Боковая навигация -->
     <div class="col-lg-3 mb-4">
         <div class="sticky-sidebar-container">
@@ -49,114 +49,58 @@
                     <h2 class="h4 mb-0"><i class="bi bi-truck"></i> Доставка и оплата</h2>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="delivery-grid">
                         <!-- Самовывоз -->
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100 border-primary">
-                                <div class="card-header bg-light">
-                                    <h3 class="h5 mb-0"><i class="bi bi-geo-alt text-primary"></i> Самовывоз</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <span class="badge bg-success">Бесплатно</span>
-                                    </div>
-                                    <p class="card-text">
-                                        Вы можете бесплатно забрать свой заказ по адресу:
-                                    </p>
-                                    <address class="bg-light p-3 rounded">
-                                        <strong>Суворовская ул., 103Б, Курск</strong>
-                                    </address>
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2">
-                                            <i class="bi bi-check-circle text-success"></i>
-                                            После сборки заказа с вами свяжется менеджер
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="bi bi-check-circle text-success"></i>
-                                            Согласование времени визита
-                                        </li>
-                                        <li>
-                                            <i class="bi bi-check-circle text-success"></i>
-                                            При себе иметь номер заказа и паспорт
-                                        </li>
-                                    </ul>
-                                </div>
+                        <div class="delivery-method delivery-method--free">
+                            <div class="delivery-method__head">
+                                <span class="delivery-method__icon"><i class="bi bi-geo-alt"></i></span>
+                                <h3 class="delivery-method__title">Самовывоз</h3>
                             </div>
+                            <span class="delivery-method__status">Бесплатно</span>
+                            <p class="delivery-method__desc">Заберите заказ сами по адресу:</p>
+                            <address class="delivery-method__addr">Суворовская ул., 103Б, Курск</address>
+                            <ul class="delivery-method__list">
+                                <li>После сборки заказа с вами свяжется менеджер</li>
+                                <li>Согласование времени визита</li>
+                                <li>При себе иметь номер заказа и паспорт</li>
+                            </ul>
                         </div>
 
                         <!-- Курьерская доставка -->
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100 border-warning">
-                                <div class="card-header bg-light">
-                                    <h3 class="h5 mb-0"><i class="bi bi-house-door text-warning"></i> Курьерская доставка</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <span class="badge bg-warning text-dark">Согласовывается отдельно</span>
-                                        <small class="text-muted">в пределах города</small>
-                                    </div>
-                                    <p class="card-text">
-                                        Доставка по городу <strong>Курск</strong>
-                                    </p>
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2">
-                                            <i class="bi bi-clock text-warning"></i>
-                                            <strong>В пределах недели от оформления заказа</strong>
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="bi bi-telephone text-warning"></i>
-                                            Звонок за час до прибытия
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="bi bi-credit-card text-warning"></i>
-                                            Оплата наличными или картой
-                                        </li>
-                                        <li>
-                                            <i class="bi bi-info-circle text-warning"></i>
-                                            Пригород: уточняйте у менеджера
-                                        </li>
-                                    </ul>
-                                </div>
+                        <div class="delivery-method delivery-method--city">
+                            <div class="delivery-method__head">
+                                <span class="delivery-method__icon"><i class="bi bi-house-door"></i></span>
+                                <h3 class="delivery-method__title">Курьерская доставка</h3>
                             </div>
+                            <span class="delivery-method__status">По городу · согласовывается</span>
+                            <p class="delivery-method__desc">Доставка по городу <strong>Курск</strong>.</p>
+                            <ul class="delivery-method__list">
+                                <li>В пределах недели от оформления заказа</li>
+                                <li>Звонок за час до прибытия</li>
+                                <li>Оплата наличными или картой</li>
+                                <li>Пригород — уточняйте у менеджера</li>
+                            </ul>
                         </div>
 
                         <!-- Доставка по России -->
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100 border-info">
-                                <div class="card-header bg-light">
-                                    <h3 class="h5 mb-0"><i class="bi bi-globe text-info"></i> По России</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <span class="badge bg-info">Рассчитывается</span>
-                                    </div>
-                                    <p class="card-text">
-                                        Доставка транспортными компаниями
-                                    </p>
-                                    <div class="mb-3">
-                                        <h6 class="text-info">Наши партнеры:</h6>
-                                        <div class="d-flex gap-2 flex-wrap">
-                                            <span class="badge bg-light text-dark border">СДЭК</span>
-                                            <span class="badge bg-light text-dark border">Boxberry</span>
-                                            <span class="badge bg-light text-dark border">Почта России</span>
-                                        </div>
-                                    </div>
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2">
-                                            <i class="bi bi-calculator text-info"></i>
-                                            Стоимость рассчитывается индивидуально
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="bi bi-box-seam text-info"></i>
-                                            Зависит от адреса и веса
-                                        </li>
-                                        <li>
-                                            <i class="bi bi-credit-card text-info"></i>
-                                            Оплата при получении
-                                        </li>
-                                    </ul>
+                        <div class="delivery-method delivery-method--russia">
+                            <div class="delivery-method__head">
+                                <span class="delivery-method__icon"><i class="bi bi-globe"></i></span>
+                                <h3 class="delivery-method__title">По России</h3>
+                            </div>
+                            <span class="delivery-method__status">Расчёт по тарифу</span>
+                            <p class="delivery-method__desc">Доставка транспортными компаниями.</p>
+                            <div>
+                                <div class="delivery-method__label">Партнёры</div>
+                                <div class="delivery-method__partners">
+                                    <span>СДЭК</span><span>Boxberry</span><span>Почта России</span>
                                 </div>
                             </div>
+                            <ul class="delivery-method__list">
+                                <li>Стоимость рассчитывается индивидуально</li>
+                                <li>Зависит от адреса и веса</li>
+                                <li>Оплата при получении</li>
+                            </ul>
                         </div>
                     </div>
 
@@ -275,7 +219,7 @@
                             <div class="bg-light p-3 rounded">
                                 <table class="table table-sm table-borderless mb-0">
                                     <tr>
-                                        <td class="text-muted" style="width: 140px;">Юридическое название:</td>
+                                        <td class="text-muted">Юридическое название:</td>
                                         <td><strong>ООО "Лаборатория-ВТ"</strong></td>
                                     </tr>
                                     <tr>
@@ -545,30 +489,96 @@ function showNotification(message, type = 'info') {
 </script>
 
 <style>
-/* Дополнительные стили для страницы информации */
-.list-group-item.active {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-}
+/* Локальные стили страницы информации (общий вид — из shop.css) */
+.credits-page .card-header { font-weight: 600; }
 
-.card {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border: 1px solid rgba(0, 0, 0, 0.125);
-}
+/* Читабельная длина строки для юридического текста */
+#agreement .ms-3 { max-width: 80ch; }
+#agreement .ms-3 p { margin-bottom: var(--space-3); }
 
-.card-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+/* --- Блок «Доставка и оплата»: плоские карточки-методы в стиле сайта --- */
+.delivery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-6); }
+.delivery-method {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+    padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4);
 }
+.delivery-method__head { display: flex; align-items: center; gap: var(--space-3); }
+.delivery-method__icon {
+    width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: #f1f5f9; color: var(--color-primary); font-size: 1.25rem;
+}
+.delivery-method__title { font-size: 1.05rem; font-weight: 700; color: var(--color-ink); margin: 0; line-height: 1.2; }
+.delivery-method__status {
+    align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--font-mono); font-size: 0.78rem; color: var(--color-ink);
+    border: 1px solid var(--color-border); border-radius: var(--radius-pill);
+    padding: 4px 12px; background: var(--color-bg);
+}
+.delivery-method__status::before {
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--dot, var(--color-primary)); flex-shrink: 0;
+}
+.delivery-method--free   { --dot: var(--color-success); }
+.delivery-method--city   { --dot: #e0a800; }
+.delivery-method--russia { --dot: var(--color-primary); }
+.delivery-method__desc { color: var(--color-muted); font-size: var(--fs-small); margin: 0; }
+.delivery-method__addr {
+    font-style: normal; background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm); padding: var(--space-3); font-size: var(--fs-small);
+    color: var(--color-ink);
+}
+.delivery-method__label {
+    font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-muted);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-2);
+}
+.delivery-method__partners { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.delivery-method__partners span {
+    font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-muted);
+    border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    padding: 2px 8px; background: var(--color-surface);
+}
+.delivery-method__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.delivery-method__list li {
+    display: flex; gap: var(--space-2); align-items: flex-start;
+    font-size: var(--fs-small); color: var(--color-body);
+}
+.delivery-method__list li::before {
+    content: ''; flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px;
+    border-radius: 1px; background: var(--color-primary); opacity: 0.55;
+}
+@media (max-width: 860px) { .delivery-grid { grid-template-columns: 1fr; } }
 
-.sticky-sidebar-container {
-    position: sticky;
-    top: 20px;
+/* --- Блок «Реквизиты компании»: перенос длинных номеров --- */
+.credits-page #contacts .table-borderless {
+    table-layout: fixed;
+    width: 100%;
 }
+.credits-page #contacts .table-borderless td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    vertical-align: top;
+    padding: 0.3rem 0.5rem 0.3rem 0;
+}
+.credits-page #contacts .table-borderless td:first-child {
+    width: 42%;
+    padding-right: var(--space-3);
+}
+.credits-page #contacts .table-borderless td:last-child strong { font-family: var(--font-mono); font-weight: 600; }
 
-/* Стили для карты */
-#map {
-    border: 1px solid #dee2e6;
-}
+/* Контактный список слева — тоже не вылезать за край */
+.credits-page #contacts .list-group-item { overflow-wrap: anywhere; }
+
+/* Единые рамки вместо разноцветных по всей странице */
+.credits-page .border-primary,
+.credits-page .border-warning,
+.credits-page .border-info,
+.credits-page .border-success { border-color: var(--color-border) !important; }
+
+/* Карта */
+#map { border: 1px solid var(--color-border); }
 
 /* Адаптивность */
 @media (max-width: 768px) {

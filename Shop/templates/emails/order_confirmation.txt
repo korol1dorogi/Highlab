@@ -1,0 +1,14 @@
+Здравствуйте, {{ order.first_name }}!
+
+Ваш заказ №{{ order.id }} принят. Мы свяжемся с вами в ближайшее время для подтверждения.
+
+Состав заказа:
+{% for item in order.items.all %}— {{ item.product_variant.product.name }}{% if item.product_variant.name %} ({{ item.product_variant.name }}){% endif %}: {{ item.quantity }} × {{ item.price }} ₽ = {{ item.total_price }} ₽
+{% endfor %}
+Итого: {{ order.total_price }} ₽
+
+Адрес доставки: {{ order.address }}
+Телефон: {{ order.phone }}
+{% if order.comment %}Комментарий: {{ order.comment }}{% endif %}
+
+Спасибо, что выбрали Лабораторию ВТ!

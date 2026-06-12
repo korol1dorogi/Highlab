@@ -1,0 +1,97 @@
+{% extends 'content/_base.html' %}
+{% load static %}
+
+{% block title %}{{ project.title }} — кейс Лаборатории ВТ{% endblock %}
+{% block meta_description %}{{ project.summary }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ project.title }} — кейс{% endblock %}
+{% block og_description %}{{ project.summary }}{% endblock %}
+{% block og_image %}{% if project.cover %}{{ request.scheme }}://{{ request.get_host }}{{ project.cover.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'og-image.png' %}{% endif %}{% endblock %}
+
+{% block content_head %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "{{ project.title|escapejs }}",
+    "description": "{{ project.summary|escapejs }}",
+    "datePublished": "{{ project.published_at|date:'Y-m-d' }}",
+    {% if project.cover %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ project.cover.url }}",{% endif %}
+    "author": {"@type": "Organization", "name": "{{ site_settings.company_name }}"},
+    "publisher": {
+        "@type": "Organization",
+        "name": "{{ site_settings.company_name }}",
+        "logo": {"@type": "ImageObject", "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.svg' %}"}
+    },
+    "mainEntityOfPage": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div class="container page-head__inner">
+            <div class="crumbs">
+                <a href="{% url 'content:hub' %}">Услуги</a><span>/</span>
+                <a href="{% url 'content:project_list' %}">Кейсы</a><span>/</span>{{ project.title }}
+            </div>
+            <span class="tag">{{ project.get_direction_display }}</span>
+            <h1 style="margin-top: var(--space-3);">{{ project.title }}</h1>
+            <p class="page-head__intro">{{ project.summary }}</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="detail">
+                <div class="detail__main">
+                    {% if project.cover %}<img class="cover-img" src="{{ project.cover.url }}" alt="{{ project.title }}">{% endif %}
+
+                    <div class="case-block">
+                        <h2>Задача</h2>
+                        <div>{{ project.task|linebreaks }}</div>
+                    </div>
+
+                    <div class="case-block">
+                        <h2>Решение</h2>
+                        <div class="prose">{{ project.solution|safe }}</div>
+                    </div>
+
+                    {% if project.equipment %}
+                    <div class="case-block">
+                        <h2>Оборудование и стек</h2>
+                        <div>{{ project.equipment|linebreaks }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if project.result %}
+                    <div class="case-block">
+                        <h2>Результат</h2>
+                        <div class="prose">{{ project.result|safe }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <aside class="detail__aside">
+                    <h4>О проекте</h4>
+                    <div class="spec">
+                        <div class="spec__row"><span class="spec__k">Направление</span><span class="spec__v">{{ project.get_direction_display }}</span></div>
+                        {% if project.client %}<div class="spec__row"><span class="spec__k">Заказчик</span><span class="spec__v">{{ project.client }}</span></div>{% endif %}
+                        {% if project.sphere %}<div class="spec__row"><span class="spec__k">Отрасль</span><span class="spec__v">{{ project.sphere }}</span></div>{% endif %}
+                        <div class="spec__row"><span class="spec__k">Дата</span><span class="spec__v">{{ project.published_at|date:"d.m.Y" }}</span></div>
+                    </div>
+                    <a href="#lead" class="btn btn--primary btn--sm" style="margin-top: var(--space-6); width: 100%;">Обсудить похожий проект</a>
+                </aside>
+            </div>
+
+            {% if related %}
+            <div style="margin-top: var(--space-16);">
+                <div class="sec-head"><span class="sec-head__idx">→</span><h2 class="sec-head__title">Похожие кейсы</h2></div>
+                <div class="content-grid">
+                    {% for project in related %}{% include 'content/includes/project_card.html' %}{% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

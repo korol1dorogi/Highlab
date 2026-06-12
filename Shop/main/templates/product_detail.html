@@ -1,7 +1,45 @@
 <!-- templates/shop/product_detail.html -->
 {% extends 'shop.html' %}
+{% load static %}
 
-{% block title %}{{ product.name }} - Магазин{% endblock %}
+{% block title %}{{ product.name }} — купить в Курске | {{ site_settings.company_name }}{% endblock %}
+{% block meta_description %}{{ product.name }}{% if product.description %} — {{ product.description|striptags|truncatechars:150 }}{% else %}. Купить в Курске с гарантией качества от мастеров Лаборатории ВТ.{% endif %}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.name }}{% endblock %}
+{% block og_description %}{% if product.description %}{{ product.description|striptags|truncatechars:200 }}{% else %}{{ product.name }} — в магазине Лаборатории ВТ, Курск.{% endif %}{% endblock %}
+{% block og_image %}{% if product.main_image %}{{ request.scheme }}://{{ request.get_host }}{{ product.main_image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'og-image.png' %}{% endif %}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": "{{ product.name|escapejs }}",
+    {% if product.main_image %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ product.main_image.url }}",{% endif %}
+    "description": "{% if product.description %}{{ product.description|striptags|truncatechars:300|escapejs }}{% else %}{{ product.name|escapejs }}{% endif %}",
+    "sku": "{{ product.sku|escapejs }}",
+    "category": "{{ product.category.name|escapejs }}",
+    "offers": {
+        "@type": "Offer",
+        "priceCurrency": "RUB",
+        "price": "{{ product.min_price }}",
+        "availability": "https://schema.org/{% if product.in_stock %}InStock{% else %}OutOfStock{% endif %}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+    }
+}
+</script>
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Магазин", "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'shop:product_list' %}"}{% for crumb in product.category.get_breadcrumbs %},
+        {"@type": "ListItem", "position": {{ forloop.counter|add:1 }}, "name": "{{ crumb.name|escapejs }}", "item": "{{ request.scheme }}://{{ request.get_host }}{{ crumb.url }}"}{% endfor %},
+        {"@type": "ListItem", "position": {{ product.category.get_breadcrumbs|length|add:2 }}, "name": "{{ product.name|escapejs }}"}
+    ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <!-- Хлебные крошки -->
@@ -228,8 +266,8 @@
                 </div>
                 {% else %}
                 <div class="alert alert-info text-center">
-                    <a href="{% url 'admin:login' %}?next={{ request.path }}" class="alert-link">Войдите</a>, 
-                    чтобы оставить отзыв
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="alert-link">Войдите</a>
+                    или <a href="{% url 'accounts:register' %}" class="alert-link">зарегистрируйтесь</a>, чтобы оставить отзыв
                 </div>
                 {% endif %}
             </div>

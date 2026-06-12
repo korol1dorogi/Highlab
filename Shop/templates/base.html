@@ -1,0 +1,146 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<script>document.documentElement.classList.add('js');</script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_settings.company_name }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Лаборатория ВТ — автоматизация АСУ ТП, разработка ПО, ремонт электроники и магазин в Курске.{% endblock %}">
+    <link rel="canonical" href="{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
+    <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+
+    <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{% static 'favicon.svg' %}">
+    <meta name="theme-color" content="#2b7de9">
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:site_name" content="{{ site_settings.company_name }}">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ site_settings.company_name }} — инженерные решения в Курске{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Автоматизация АСУ ТП, разработка ПО, ремонт техники и магазин электроники в Курске.{% endblock %}">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'og-image.png' %}{% endblock %}">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/content.css' %}">
+
+    {% block ld_org %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "{{ site_settings.company_name }}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/",
+        "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.svg' %}",
+        "email": "{{ site_settings.email }}",
+        "address": {"@type": "PostalAddress", "streetAddress": "{{ site_settings.address }}", "addressLocality": "Курск", "addressCountry": "RU"}{% if site_settings.vk_url %},
+        "sameAs": ["{{ site_settings.vk_url }}"]{% endif %}
+    }
+    </script>
+    {% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+    <div class="page-decor" aria-hidden="true"></div>
+    <nav class="section-rail" id="sectionRail" aria-label="Навигация по разделам"></nav>
+
+    {% include 'includes/header.html' %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include 'includes/footer.html' %}
+
+    {% include 'includes/metrika.html' %}
+
+    <script>
+        // Мобильное меню
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggle = document.querySelector('.nav-toggle');
+            var nav = document.querySelector('.site-nav');
+            if (toggle && nav) {
+                toggle.addEventListener('click', function () {
+                    var open = nav.classList.toggle('is-open');
+                    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+            }
+
+            // Индикатор прогресса прокрутки
+            var bar = document.getElementById('scrollProgress');
+            if (bar) {
+                var updateBar = function () {
+                    var h = document.documentElement;
+                    var max = h.scrollHeight - h.clientHeight;
+                    var pct = max > 0 ? (h.scrollTop || window.scrollY) / max * 100 : 0;
+                    bar.style.width = pct + '%';
+                };
+                window.addEventListener('scroll', updateBar, { passive: true });
+                window.addEventListener('resize', updateBar);
+                updateBar();
+            }
+
+            // Плавное появление секций при прокрутке
+            var revealables = document.querySelectorAll('.reveal-on-scroll');
+            if (revealables.length && 'IntersectionObserver' in window) {
+                var revObserver = new IntersectionObserver(function (entries, obs) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            obs.unobserve(entry.target);
+                        }
+                    });
+                }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
+                revealables.forEach(function (el) { revObserver.observe(el); });
+            } else {
+                revealables.forEach(function (el) { el.classList.add('is-visible'); });
+            }
+
+            // Боковая навигация по секциям + подсветка активной
+            var rail = document.getElementById('sectionRail');
+            var sections = Array.prototype.slice.call(document.querySelectorAll('[data-rail]'));
+            if (rail && sections.length >= 2) {
+                sections.forEach(function (sec, i) {
+                    if (!sec.id) { sec.id = 'rail-sec-' + (i + 1); }
+                    var num = ('0' + (i + 1)).slice(-2);
+                    var item = document.createElement('a');
+                    item.className = 'rail-item';
+                    item.href = '#' + sec.id;
+                    item.innerHTML = '<span class="rail-item__num">' + num + '</span>' +
+                                     '<span class="rail-item__label">' + sec.getAttribute('data-rail') + '</span>';
+                    item.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                    rail.appendChild(item);
+                });
+                var railItems = rail.querySelectorAll('.rail-item');
+                if ('IntersectionObserver' in window) {
+                    var spy = new IntersectionObserver(function (entries) {
+                        entries.forEach(function (entry) {
+                            if (entry.isIntersecting) {
+                                var idx = sections.indexOf(entry.target);
+                                railItems.forEach(function (it, j) {
+                                    it.classList.toggle('is-active', j === idx);
+                                });
+                            }
+                        });
+                    }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+                    sections.forEach(function (sec) { spy.observe(sec); });
+                }
+            } else if (rail) {
+                rail.style.display = 'none';
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

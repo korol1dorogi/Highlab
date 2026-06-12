@@ -1,0 +1,148 @@
+{% extends 'content/_base.html' %}
+
+{% block title %}Услуги и экспертиза — Лаборатория ВТ{% endblock %}
+{% block meta_description %}Услуги мастерской, кейсы по АСУ ТП и разработке, статьи базы знаний, упоминания в СМИ и интервью — Лаборатория ВТ, Курск.{% endblock %}
+{% block og_title %}Услуги и инженерная экспертиза — Лаборатория ВТ{% endblock %}
+{% block og_description %}Ремонт и восстановление техники, автоматизация АСУ ТП, разработка ПО. Кейсы, статьи и медиа — Курск.{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div class="container page-head__inner">
+            <span class="eyebrow">// услуги · кейсы · статьи · медиа</span>
+            <h1>Услуги мастерской и инженерная экспертиза</h1>
+            <p class="page-head__intro">
+                Ремонт и восстановление техники, промышленная автоматизация АСУ ТП и разработка ПО.
+                Ниже — что мы делаем, наши проекты, статьи и упоминания.
+            </p>
+            <a href="#services" class="scroll-cue" aria-label="Листайте вниз">
+                <span class="scroll-cue__chevron">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </span>
+                листайте вниз — услуги, кейсы, статьи, медиа
+            </a>
+        </div>
+    </section>
+
+    <!-- 01 УСЛУГИ -->
+    <section class="section reveal-on-scroll" id="services" data-rail="Услуги">
+        <div class="container">
+            <div class="sec-head">
+                <span class="sec-head__idx">01</span>
+                <h2 class="sec-head__title">Услуги</h2>
+            </div>
+            <div class="svc-grid">
+                {% for service in services %}
+                <a class="svc-card" href="{{ service.get_absolute_url }}">
+                    <span class="svc-card__icon">{% include 'includes/icon.html' with key=service.icon_key %}</span>
+                    <h3>{{ service.title }}</h3>
+                    <p>{{ service.description }}</p>
+                    <span class="svc-card__more">Подробнее →</span>
+                </a>
+                {% empty %}
+                <div class="empty-note">Услуги пока не добавлены.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 02 КЕЙСЫ -->
+    <section class="section reveal-on-scroll" id="cases" data-rail="Кейсы" style="background: var(--color-surface);">
+        <div class="container">
+            <div class="sec-head">
+                <span class="sec-head__idx">02</span>
+                <h2 class="sec-head__title">Проекты и кейсы</h2>
+                <a class="sec-head__link" href="{% url 'content:project_list' %}">Все кейсы →</a>
+            </div>
+            <div class="content-grid">
+                {% for project in projects %}
+                    {% include 'content/includes/project_card.html' %}
+                {% empty %}
+                <div class="empty-note">Кейсы появятся здесь — добавьте их в админке.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 03 СТАТЬИ -->
+    <section class="section reveal-on-scroll" id="articles" data-rail="Статьи">
+        <div class="container">
+            <div class="sec-head">
+                <span class="sec-head__idx">03</span>
+                <h2 class="sec-head__title">Статьи и база знаний</h2>
+                <a class="sec-head__link" href="{% url 'content:article_list' %}">Все статьи →</a>
+            </div>
+            <div class="content-grid">
+                {% for article in articles %}
+                    {% include 'content/includes/article_card.html' %}
+                {% empty %}
+                <div class="empty-note">Статьи появятся здесь — добавьте их в админке.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 04 МЕДИА -->
+    <section class="section reveal-on-scroll" id="media" data-rail="Медиа" style="background: var(--color-surface);">
+        <div class="container">
+            <div class="sec-head">
+                <span class="sec-head__idx">04</span>
+                <h2 class="sec-head__title">Медиа и упоминания</h2>
+                <a class="sec-head__link" href="{% url 'content:media_list' %}">Все →</a>
+            </div>
+            <div class="media-list">
+                {% for item in media_items %}
+                <div class="media-row">
+                    <div class="media-row__date">{{ item.date|date:"d.m.Y" }}</div>
+                    <div>
+                        <span class="tag tag--muted">{{ item.get_kind_display }}</span>
+                        <div class="media-row__title">{{ item.title }}</div>
+                        {% if item.description %}<div class="media-row__desc">{{ item.description }}</div>{% endif %}
+                    </div>
+                    {% if item.external_url %}<a class="btn btn--ghost btn--sm" href="{{ item.external_url }}" target="_blank" rel="noopener">Открыть</a>{% else %}<span></span>{% endif %}
+                </div>
+                {% empty %}
+                <div class="empty-note">Упоминания, конкурсы и интервью появятся здесь.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 05 FAQ -->
+    {% if faqs %}
+    <section class="section reveal-on-scroll" id="faq" data-rail="Вопросы">
+        <div class="container">
+            <div class="sec-head">
+                <span class="sec-head__idx">05</span>
+                <h2 class="sec-head__title">Частые вопросы</h2>
+            </div>
+            <div class="faq-list">
+                {% for f in faqs %}
+                <details class="faq-item"{% if forloop.first %} open{% endif %}>
+                    <summary class="faq-item__q">{{ f.question }}</summary>
+                    <div class="faq-item__a">{{ f.answer|linebreaks }}</div>
+                </details>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+{% endblock %}
+
+{% block content_head %}
+{% if faqs %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {% for f in faqs %}{
+            "@type": "Question",
+            "name": "{{ f.question|escapejs }}",
+            "acceptedAnswer": {"@type": "Answer", "text": "{{ f.answer|escapejs }}"}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>
+{% endif %}
+{% endblock %}

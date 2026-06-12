@@ -7,6 +7,5 @@ app_name = 'index'
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('service/', views.service, name='service')
-    # другие маршруты...
+    path('lead/', views.lead_create, name='lead_create'),
 ]

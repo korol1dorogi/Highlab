@@ -6,7 +6,7 @@
             <!-- Первая страница -->
             {% if page.number > 1 %}
             <li class="page-item">
-                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key|urlencode }}={{ value|urlencode }}{% endif %}{% endfor %}" aria-label="First">
                     <i class="bi bi-chevron-double-left"></i>
                 </a>
             </li>
@@ -19,7 +19,7 @@
             <!-- Назад -->
             {% if page.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                <a class="page-link" href="?page={{ page.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key|urlencode }}={{ value|urlencode }}{% endif %}{% endfor %}" aria-label="Previous">
                     <i class="bi bi-chevron-left"></i>
                 </a>
             </li>
@@ -39,7 +39,7 @@
                     </li>
                     {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key|urlencode }}={{ value|urlencode }}{% endif %}{% endfor %}">
                             {{ num }}
                         </a>
                     </li>
@@ -52,7 +52,7 @@
                     </li>
                     {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key|urlencode }}={{ value|urlencode }}{% endif %}{% endfor %}">
                             {{ num }}
                         </a>
                     </li>
@@ -68,7 +68,7 @@
             <!-- Вперед -->
             {% if page.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                <a class="page-link" href="?page={{ page.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key|urlencode }}={{ value|urlencode }}{% endif %}{% endfor %}" aria-label="Next">
                     <i class="bi bi-chevron-right"></i>
                 </a>
             </li>
@@ -81,7 +81,7 @@
             <!-- Последняя страница -->
             {% if page.number < page.paginator.num_pages %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                <a class="page-link" href="?page={{ page.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key|urlencode }}={{ value|urlencode }}{% endif %}{% endfor %}" aria-label="Last">
                     <i class="bi bi-chevron-double-right"></i>
                 </a>
             </li>

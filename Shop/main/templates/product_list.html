@@ -22,8 +22,15 @@
 </nav>
 {% endif %}
 <div class="shop-layout">
+    <!-- Кнопка категорий (только мобильные): дерево свёрнуто, товары сразу под заголовком -->
+    <button class="btn btn-outline-primary w-100 mb-2 d-lg-none catalog-toggle" type="button"
+            data-bs-toggle="collapse" data-bs-target="#catalogSidebar"
+            aria-expanded="false" aria-controls="catalogSidebar">
+        <i class="bi bi-list"></i> Категории и разделы
+    </button>
+
     <!-- Сайдбар с категориями -->
-    <aside class="shop-sidebar">
+    <aside class="shop-sidebar collapse d-lg-block" id="catalogSidebar">
         <div class="sticky-sidebar-container">
             <div class="card category-sidebar">
                 <div class="card-header">

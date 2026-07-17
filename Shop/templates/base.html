@@ -1,9 +1,9 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="ru">
-<script>document.documentElement.classList.add('js');</script>
 <head>
     <meta charset="UTF-8">
+    <script>document.documentElement.classList.add('js');</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ site_settings.company_name }}{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Лаборатория ВТ — автоматизация АСУ ТП, разработка ПО, ремонт электроники и магазин в Курске.{% endblock %}">
@@ -24,9 +24,9 @@
     <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'og-image.png' %}{% endblock %}">
     <meta name="twitter:card" content="summary_large_image">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="{% static 'vendor/fonts/inter-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'vendor/fonts/inter-cyrillic.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{% static 'vendor/fonts/fonts.css' %}">
 
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <link rel="stylesheet" href="{% static 'css/content.css' %}">
@@ -53,6 +53,8 @@
     <nav class="section-rail" id="sectionRail" aria-label="Навигация по разделам"></nav>
 
     {% include 'includes/header.html' %}
+
+    {% include 'includes/messages.html' %}
 
     <main>
         {% block content %}{% endblock %}

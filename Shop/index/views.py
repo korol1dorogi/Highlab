@@ -23,10 +23,6 @@ def index(request):
     return render(request, 'index2_0.html', context)
 
 
-def service(request):
-    return render(request, 'index.html')
-
-
 @require_POST
 def lead_create(request):
     """Приём заявки с лендинга (AJAX). Уведомление уходит в Telegram через Celery."""

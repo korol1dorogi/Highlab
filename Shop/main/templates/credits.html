@@ -19,7 +19,7 @@
                     <a href="#agreement" class="list-group-item list-group-item-action">
                         <i class="bi bi-file-text"></i> Пользовательское соглашение
                     </a>
-                    <a href="#contacts" class="list-group-item list-group-item-action">
+                    <a href="#requisites" class="list-group-item list-group-item-action">
                         <i class="bi bi-telephone"></i> Контакты и реквизиты
                     </a>
                 </div>
@@ -171,7 +171,7 @@
         </section>
 
         <!-- Раздел: Контакты и реквизиты -->
-        <section id="contacts">
+        <section id="requisites">
             <div class="card">
                 <div class="card-header bg-dark text-white">
                     <h2 class="h4 mb-0"><i class="bi bi-telephone"></i> Контакты и реквизиты</h2>
@@ -459,33 +459,11 @@ document.addEventListener('DOMContentLoaded', function() {
     highlightActiveSection(); // Инициализация при загрузке
 });
 
-// Функция для "скачивания" страницы (эмуляция)
+// Сохранение/печать страницы средствами браузера (в диалоге можно выбрать «Сохранить как PDF»)
 function downloadPage() {
-    showNotification('Функция скачивания PDF в разработке', 'info');
-    
-    // В реальном приложении здесь был бы запрос к серверу для генерации PDF
-    setTimeout(() => {
-        showNotification('Для сохранения страницы используйте комбинацию Ctrl+P', 'info');
-    }, 1000);
+    window.print();
 }
-
-// Функция для показа уведомлений (уже есть в base.html, но на всякий случай)
-function showNotification(message, type = 'info') {
-    // Используем существующую функцию из base.html или создаем временную
-    if (typeof window.showNotification === 'function') {
-        window.showNotification(message, type);
-    } else {
-        // Временная реализация для демонстрации
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${type} alert-dismissible fade show`;
-        alert.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.querySelector('main').prepend(alert);
-        setTimeout(() => alert.remove(), 5000);
-    }
-}
+// showNotification предоставляется глобально в static/js/shop.js — локальная копия не нужна.
 </script>
 
 <style>
@@ -551,25 +529,25 @@ function showNotification(message, type = 'info') {
 @media (max-width: 860px) { .delivery-grid { grid-template-columns: 1fr; } }
 
 /* --- Блок «Реквизиты компании»: перенос длинных номеров --- */
-.credits-page #contacts .table-borderless {
+.credits-page #requisites .table-borderless {
     table-layout: fixed;
     width: 100%;
 }
-.credits-page #contacts .table-borderless td {
+.credits-page #requisites .table-borderless td {
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: break-word;
     vertical-align: top;
     padding: 0.3rem 0.5rem 0.3rem 0;
 }
-.credits-page #contacts .table-borderless td:first-child {
+.credits-page #requisites .table-borderless td:first-child {
     width: 42%;
     padding-right: var(--space-3);
 }
-.credits-page #contacts .table-borderless td:last-child strong { font-family: var(--font-mono); font-weight: 600; }
+.credits-page #requisites .table-borderless td:last-child strong { font-family: var(--font-mono); font-weight: 600; }
 
 /* Контактный список слева — тоже не вылезать за край */
-.credits-page #contacts .list-group-item { overflow-wrap: anywhere; }
+.credits-page #requisites .list-group-item { overflow-wrap: anywhere; }
 
 /* Единые рамки вместо разноцветных по всей странице */
 .credits-page .border-primary,

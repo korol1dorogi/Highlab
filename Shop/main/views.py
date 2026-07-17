@@ -1,9 +1,30 @@
 # shop/views.py
+import logging
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView
+from django.db import transaction
 from django.db.models import Q
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse, Http404
+
+logger = logging.getLogger(__name__)
+
+
+def _can_access_order(request, order):
+    """Право просмотра заказа.
+
+    Разрешаем, если пользователь авторизован и это его заказ, ЛИБО если совпадает
+    ключ сессии, оформившей заказ. Для гостевых заказов доступ по cookie сессии —
+    это удобно, но небезопасно: при истечении/смене cookie доступ теряется, поэтому
+    на странице успеха гостю рекомендуем сохранить PDF-квитанцию.
+    """
+    if request.user.is_authenticated and order.user_id and order.user_id == request.user.id:
+        return True
+    session_key = request.session.session_key
+    if order.session_key and session_key and order.session_key == session_key:
+        return True
+    return False
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
@@ -461,43 +482,73 @@ def checkout(request):
         form = OrderForm(request.POST)
         if form.is_valid():
             request.session['customer_data'] = {
-            'first_name': form.cleaned_data['first_name'],
-            'last_name': form.cleaned_data['last_name'],
-            'email': form.cleaned_data['email'],
-            'phone': form.cleaned_data['phone'],
+                'first_name': form.cleaned_data['first_name'],
+                'last_name': form.cleaned_data['last_name'],
+                'email': form.cleaned_data['email'],
+                'phone': form.cleaned_data['phone'],
             }
-            # Создаем заказ
-            order = form.save(commit=False)
-            order.total_price = total_price
-            
-            # Для авторизованных пользователей сохраняем связь
-            if request.user.is_authenticated:
-                order.user = request.user
-            else:
-                # Для анонимных пользователей сохраняем сессию
-                order.session_key = request.session.session_key
-            
-            order.save()
-            
-            # Создаем элементы заказа (ОБНОВЛЕНО ДЛЯ ВАРИАНТОВ)
-            for cart_item in cart_items:
-                OrderItem.objects.create(
-                    order=order,
-                    product_variant=cart_item.product_variant,  # Используем вариант товара
-                    quantity=cart_item.quantity,
-                    price=cart_item.price  # Используем цену из корзины
-                )
-            
-            # Уведомление в Telegram + письмо-подтверждение покупателю (асинхронно)
-            send_order_notification.delay(order.id)
-            send_order_confirmation.delay(order.id)
 
-            # Очищаем корзину
-            cart_manager.clear()
-            
-            # Показываем сообщение об успехе
-            messages.success(request, f"✅ Ваш заказ #{order.id} успешно оформлен! Мы свяжемся с вами в ближайшее время.")
-            
+            # Для гостя ключ сессии нужен ДО транзакции: он может создать сессию.
+            if not request.user.is_authenticated and not request.session.session_key:
+                request.session.create()
+
+            def queue_notifications(oid):
+                """Ставим уведомления в очередь, но не роняем уже оформленный заказ,
+                если брокер (Redis) недоступен."""
+                try:
+                    send_order_notification.delay(oid)
+                    send_order_confirmation.delay(oid)
+                except Exception:
+                    logger.exception("Не удалось поставить в очередь уведомления по заказу #%s", oid)
+
+            try:
+                with transaction.atomic():
+                    # Блокируем корзину: двойной клик / гонка не создадут дубль заказа.
+                    cart = Cart.objects.select_for_update().get(pk=cart_manager.cart.pk)
+                    items = list(
+                        cart.items.select_related(
+                            'product_variant', 'product_variant__product'
+                        ).all()
+                    )
+                    if not items:
+                        # Корзина уже очищена — значит заказ по этой отправке уже создан.
+                        messages.info(request, "Похоже, этот заказ уже оформлен.")
+                        return redirect('shop:cart_detail')
+
+                    order = form.save(commit=False)
+                    order.total_price = sum(item.total_price for item in items)
+                    if request.user.is_authenticated:
+                        order.user = request.user
+                    order.session_key = request.session.session_key or ''
+                    order.save()
+
+                    OrderItem.objects.bulk_create([
+                        OrderItem(
+                            order=order,
+                            product_variant=item.product_variant,
+                            quantity=item.quantity,
+                            price=item.price,
+                        )
+                        for item in items
+                    ])
+
+                    # Очищаем корзину в той же транзакции — атомарно с созданием заказа.
+                    cart.items.all().delete()
+
+                    # Уведомления — только после успешного коммита.
+                    transaction.on_commit(lambda oid=order.id: queue_notifications(oid))
+            except Exception:
+                logger.exception("Ошибка при оформлении заказа")
+                messages.error(
+                    request,
+                    "Не удалось оформить заказ. Попробуйте ещё раз или свяжитесь с нами."
+                )
+                return redirect('shop:checkout')
+
+            messages.success(
+                request,
+                f"✅ Ваш заказ #{order.id} успешно оформлен! Мы свяжемся с вами в ближайшее время."
+            )
             return redirect('shop:order_success', order_id=order.id)
     else:
         # Предзаполняем форму данными пользователя, если он авторизован
@@ -533,29 +584,23 @@ def order_success(request, order_id):
         messages.error(request, "Заказ не найден")
         return redirect('shop:product_list')
 
-    # Проверка прав доступа: владелец заказа или анонимная сессия, оформившая заказ
-    if request.user.is_authenticated:
-        if order.user_id and order.user_id != request.user.id:
-            return HttpResponse("Доступ запрещен", status=403)
-    else:
-        if not order.session_key or order.session_key != request.session.session_key:
-            return HttpResponse("Доступ запрещен", status=403)
+    # Проверка прав доступа: владелец заказа или сессия, оформившая заказ.
+    if not _can_access_order(request, order):
+        return HttpResponse("Доступ запрещен", status=403)
 
-    context = {'order': order}
+    # Гостю (доступ по cookie сессии) советуем сохранить PDF-квитанцию.
+    guest_access = not (request.user.is_authenticated and order.user_id == request.user.id)
+    context = {'order': order, 'guest_access': guest_access}
     return render(request, 'order_success.html', context)
 
 def download_order_pdf(request, order_id):
     """Генерация PDF с русскими буквами используя системные шрифты"""
     order = get_object_or_404(Order, id=order_id)
-    
-    # Проверка прав доступа
-    if request.user.is_authenticated:
-        if order.user != request.user:
-            return HttpResponse("Доступ запрещен", status=403)
-    else:
-        if not hasattr(order, 'session_key') or order.session_key != request.session.session_key:
-            return HttpResponse("Доступ запрещен", status=403)
-    
+
+    # Проверка прав доступа (тот же принцип, что и на странице успеха).
+    if not _can_access_order(request, order):
+        return HttpResponse("Доступ запрещен", status=403)
+
     # Создаем буфер для PDF
     buffer = BytesIO()
     

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Страница не найдена — {{ site_settings.company_name }}{% endblock %}
+{% block meta_description %}Страница не найдена. Вернитесь в каталог или на главную страницу Лаборатории ВТ.{% endblock %}
+{% block robots %}noindex, follow{% endblock %}
+
+{% block content %}
+<section class="container" style="padding-block: var(--space-10, 64px); text-align: center; max-width: 640px;">
+    <div style="font-size: clamp(56px, 12vw, 96px); font-weight: 800; line-height: 1; color: var(--color-primary, #2b7de9);">404</div>
+    <h1 style="margin-top: 12px;">Такой страницы нет</h1>
+    <p style="color: var(--color-text-muted, #6b7883); max-width: 46ch; margin: 12px auto 28px;">
+        Возможно, товар распродан или ссылка устарела. Давайте вернёмся к делу — найдём нужное в каталоге или ответим на вопрос.
+    </p>
+
+    <form action="{% url 'shop:product_list' %}" method="get" role="search"
+          style="display:flex; gap:8px; max-width:420px; margin:0 auto 24px;">
+        <input type="search" name="search" placeholder="Поиск по каталогу…"
+               style="flex:1; padding:10px 14px; border:1px solid var(--color-border,#dde3e9); border-radius:10px;">
+        <button type="submit" class="btn btn--primary">Найти</button>
+    </form>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+        <a href="{% url 'index:index' %}" class="btn btn--primary">На главную</a>
+        <a href="{% url 'shop:product_list' %}" class="btn btn--ghost">В магазин</a>
+        <a href="/service/" class="btn btn--ghost">Услуги и ремонт</a>
+        <a href="/#contacts" class="btn btn--ghost">Контакты</a>
+    </div>
+</section>
+{% endblock %}

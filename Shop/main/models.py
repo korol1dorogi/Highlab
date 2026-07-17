@@ -127,6 +127,7 @@ class Product(models.Model):
     )
     slug = models.SlugField(
         max_length=200,
+        unique=True,
         db_index=True,
         verbose_name='URL товара'
     )
@@ -541,12 +542,32 @@ class Order(models.Model):
         ('cancelled', 'Отменен'),
     ]
 
+    DELIVERY_CHOICES = [
+        ('pickup', 'Самовывоз (бесплатно)'),
+        ('courier', 'Курьер по Курску'),
+        ('shipping', 'Транспортная компания по России'),
+    ]
+
+    PAYMENT_CHOICES = [
+        ('cash', 'Наличными при получении'),
+        ('card', 'Картой при получении'),
+        ('transfer', 'Перевод по реквизитам'),
+    ]
+
     # Контактные данные
     first_name = models.CharField(max_length=100, verbose_name='Имя')
     last_name = models.CharField(max_length=100, verbose_name='Фамилия')
     email = models.EmailField(verbose_name='Email')
     phone = models.CharField(max_length=20, verbose_name='Телефон')
-    address = models.TextField(verbose_name='Адрес доставки')
+    delivery_method = models.CharField(
+        max_length=20, choices=DELIVERY_CHOICES, default='pickup',
+        verbose_name='Способ получения'
+    )
+    payment_method = models.CharField(
+        max_length=20, choices=PAYMENT_CHOICES, default='cash',
+        verbose_name='Способ оплаты'
+    )
+    address = models.TextField(blank=True, verbose_name='Адрес доставки')
     comment = models.TextField(blank=True, verbose_name='Комментарий к заказу')
     
     # Данные заказа

@@ -6,14 +6,6 @@
 
 {% block content %}
 
-{% if messages %}
-<div style="display: none;">
-    {% for message in messages %}
-    <!-- Сообщения будут показаны и автоматически очищены Django -->
-    {% endfor %}
-</div>
-{% endif %}
-
 <div class="row">
     <div class="col-12">
         <h1 class="mb-4">
@@ -61,13 +53,13 @@
                                         <span class="h6">{{ item.price }} ₽</span>
                                     </td>
                                     <td class="align-middle">
-                                        <form method="post" action="{% url 'shop:cart_update' item.product_variant.id %}" data-action="{% url 'shop:cart_update' item.product_variant.id %}" class="d-inline" id="form-{{ item.product_variant.id }}">
+                                        <form method="post" action="{% url 'shop:cart_update' item.product_variant.id %}" class="cart-update-form d-inline" data-variant-id="{{ item.product_variant.id }}" id="form-{{ item.product_variant.id }}">
                                             {% csrf_token %}
                                             <div class="input-group input-group-sm" style="width: 140px;">
                                                 <button type="submit" class="btn btn-outline-secondary" name="action" value="decrease">
                                                     -
                                                 </button>
-                                                <span class="form-control text-center">
+                                                <span class="form-control text-center" data-qty="{{ item.product_variant.id }}">
                                                     {{ item.quantity }}
                                                 </span>
                                                 <button type="submit" class="btn btn-outline-secondary" name="action" value="increase">
@@ -78,7 +70,7 @@
                                         </form>
                                     </td>
                                     <td class="align-middle">
-                                        <span class="h6 text-primary">{{ item.total_price }} ₽</span>
+                                        <span class="h6 text-primary"><span data-item-total="{{ item.product_variant.id }}">{{ item.total_price }}</span> ₽</span>
                                     </td>
                                     <td class="align-middle">
                                         <form method="post" action="{% url 'shop:cart_remove' item.product_variant.id %}" class="d-inline">
@@ -108,7 +100,7 @@
                                     {% endif %}
                                     <p class="text-muted small mb-1">Артикул: {{ item.product_variant.sku|default:item.product_variant.product.sku }}</p>
                                     <p class="mb-1"><strong>{{ item.price }} ₽</strong></p>
-                                    <p class="mb-2"><strong>Сумма: {{ item.total_price }} ₽</strong></p>
+                                    <p class="mb-2"><strong>Сумма: <span data-item-total="{{ item.product_variant.id }}">{{ item.total_price }}</span> ₽</strong></p>
                                 </div>
                                 <div class="col-4 text-end">
                                     {% if item.product_variant.product.main_image %}
@@ -122,13 +114,13 @@
                             
                             <div class="row align-items-center">
                                 <div class="col-6">
-                                    <form method="post" action="{% url 'shop:cart_update' item.product_variant.id %}" data-action="{% url 'shop:cart_update' item.product_variant.id %}">
+                                    <form method="post" action="{% url 'shop:cart_update' item.product_variant.id %}" class="cart-update-form" data-variant-id="{{ item.product_variant.id }}">
                                         {% csrf_token %}
                                         <div class="input-group input-group-sm">
                                             <button type="submit" class="btn btn-outline-secondary" name="action" value="decrease">
                                                 -
                                             </button>
-                                            <span class="form-control text-center cart-quantity" data-variant-id="{{ item.product_variant.id }}">
+                                            <span class="form-control text-center cart-quantity" data-variant-id="{{ item.product_variant.id }}" data-qty="{{ item.product_variant.id }}">
                                                 {{ item.quantity }}
                                             </span>
                                             <button type="submit" class="btn btn-outline-secondary" name="action" value="increase">
@@ -156,7 +148,7 @@
                 <div class="border-top pt-3 mt-3">
                     <div class="row">
                         <div class="col-12 text-end">
-                            <h4 class="text-success">Итого: {{ total_price }} ₽</h4>
+                            <h4 class="text-success">Итого: <span id="cart-grand-total">{{ total_price }}</span> ₽</h4>
                         </div>
                     </div>
                 </div>
@@ -198,55 +190,59 @@
 
 {% block scripts %}
 <script>
-// МИНИМАЛЬНЫЙ РАБОЧИЙ ВАРИАНТ
-console.log('Simple cart script loading...');
+// Изменение количества в корзине без перезагрузки страницы.
+// Обработчик вешаем только на формы +/- (.cart-update-form); удаление и очистка
+// корзины отправляются обычным сабмитом. При любой неожиданности — надёжный fallback (reload).
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.cart-update-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var vid = form.getAttribute('data-variant-id');
+            var action = (e.submitter && e.submitter.value) ? e.submitter.value : 'increase';
+            var data = new FormData(form);
+            data.set('action', action);
 
-// Ждем полной загрузки DOM
-window.onload = function() {
-    console.log('Window loaded, installing handlers...');
-    
-    // Находим ВСЕ кнопки на странице
-    const allButtons = document.getElementsByTagName('button');
-    console.log('Total buttons on page:', allButtons.length);
-    
-    // Добавляем обработчик на каждую кнопку
-    for (let button of allButtons) {
-        button.onclick = async function(e) {
-            // Проверяем, находится ли кнопка в форме корзины
-            const form = this.closest('form');
-            if (form && form.action && form.action.includes('cart/update')) {
-                console.log('Cart button clicked!');
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Отправляем форму через AJAX
-                const formData = new FormData(form);
-                
-                try {
-                    const response = await fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const result = await response.json();
-                        if (result.success) {
-                            location.reload();
-                        }
+            fetch(form.action, {
+                method: 'POST',
+                body: data,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function (r) {
+                if (!r.ok) throw new Error('bad status');
+                return r.json();
+            }).then(function (result) {
+                if (!result.success) {
+                    if (window.showNotification) {
+                        window.showNotification(result.message || 'Не удалось обновить количество', 'danger');
                     }
-                } catch (error) {
-                    console.error('Error:', error);
+                    return;
                 }
-                
-                return false;
-            }
-        };
-    }
-    
-    console.log('Handlers installed');
-};
+                var removed = (result.current_quantity === undefined || result.current_quantity === 0);
+                if (removed) {
+                    ['cart-item-' + vid, 'cart-mobile-item-' + vid].forEach(function (id) {
+                        var el = document.getElementById(id);
+                        if (el) { el.remove(); }
+                    });
+                } else {
+                    document.querySelectorAll('[data-qty="' + vid + '"]').forEach(function (el) {
+                        el.textContent = result.current_quantity;
+                    });
+                    document.querySelectorAll('[data-item-total="' + vid + '"]').forEach(function (el) {
+                        el.textContent = result.item_total;
+                    });
+                    form.querySelectorAll('input[name="current_quantity"]').forEach(function (i) {
+                        i.value = result.current_quantity;
+                    });
+                }
+                var grand = document.getElementById('cart-grand-total');
+                if (grand && result.total_price !== undefined) { grand.textContent = result.total_price; }
+                if (window.updateCartBadge) { window.updateCartBadge(result.total_quantity); }
+                // Корзина опустела — показываем пустое состояние.
+                if (result.total_quantity === 0) { location.reload(); }
+            }).catch(function () {
+                location.reload();
+            });
+        });
+    });
+});
 </script>
 {% endblock %}

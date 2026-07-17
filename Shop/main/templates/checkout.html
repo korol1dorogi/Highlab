@@ -85,6 +85,21 @@
                         </div>
                         
                         <div class="mb-3">
+                            <label class="form-label d-block"><strong>Способ получения *</strong></label>
+                            <div class="delivery-options">
+                                {% for radio in form.delivery_method %}
+                                <div class="form-check">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.delivery_method.errors %}
+                            <div class="text-danger small">{{ form.delivery_method.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3" id="address-field">
                             <label for="{{ form.address.id_for_label }}" class="form-label">
                                 {{ form.address.label }} *
                             </label>
@@ -92,7 +107,22 @@
                             {% if form.address.errors %}
                             <div class="text-danger small">{{ form.address.errors }}</div>
                             {% endif %}
-                            <div class="form-text">Укажите город, улицу, дом, квартиру</div>
+                            <div class="form-text">Укажите город, улицу, дом, квартиру. Стоимость доставки рассчитает менеджер.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label d-block"><strong>Способ оплаты *</strong></label>
+                            <div class="payment-options">
+                                {% for radio in form.payment_method %}
+                                <div class="form-check">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.payment_method.errors %}
+                            <div class="text-danger small">{{ form.payment_method.errors }}</div>
+                            {% endif %}
                         </div>
                         
                         <div class="mb-3">
@@ -178,6 +208,17 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Адрес нужен только при доставке — скрываем его для самовывоза.
+    const addressField = document.getElementById('address-field');
+    const deliveryRadios = document.querySelectorAll('input[name="delivery_method"]');
+    function toggleAddress() {
+        const selected = document.querySelector('input[name="delivery_method"]:checked');
+        const needAddress = selected && selected.value !== 'pickup';
+        if (addressField) { addressField.style.display = needAddress ? '' : 'none'; }
+    }
+    deliveryRadios.forEach(function (r) { r.addEventListener('change', toggleAddress); });
+    toggleAddress();
+
     // Маска для телефона (простая версия)
     const phoneInput = document.querySelector('#{{ form.phone.id_for_label }}');
     if (phoneInput) {

@@ -18,9 +18,6 @@
     function showNotification(message, type) {
         type = type || 'success';
 
-        var path = window.location.pathname;
-        if (path.includes('cart') || path.includes('checkout')) { return; }
-
         var container = document.getElementById('notification-container');
         if (!container) {
             container = document.createElement('div');

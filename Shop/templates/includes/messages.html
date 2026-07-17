@@ -1,0 +1,29 @@
+{% if messages %}
+<div class="flash-messages container" role="status" aria-live="polite">
+    {% for message in messages %}
+    <div class="flash-message flash-message--{{ message.tags|default:'info' }}">
+        <span class="flash-message__text">{{ message }}</span>
+        <button type="button" class="flash-message__close" aria-label="Закрыть"
+                onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endfor %}
+</div>
+<style>
+    .flash-messages { display: flex; flex-direction: column; gap: 10px; margin: 16px auto; }
+    .flash-message {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 12px 16px; border-radius: 10px; font-size: 15px; line-height: 1.4;
+        border: 1px solid rgba(0,0,0,.08); box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .flash-message--success { background: #e6f4ea; color: #12633a; border-color: #bfe3cd; }
+    .flash-message--error,
+    .flash-message--danger  { background: #fbe6e6; color: #a12626; border-color: #f0c4c4; }
+    .flash-message--warning { background: #fdf3d8; color: #8a6100; border-color: #f0e0ad; }
+    .flash-message--info    { background: #e7f0ff; color: #0b4bb3; border-color: #cadff8; }
+    .flash-message__close {
+        background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer;
+        color: inherit; opacity: .6; padding: 0 4px;
+    }
+    .flash-message__close:hover { opacity: 1; }
+</style>
+{% endif %}

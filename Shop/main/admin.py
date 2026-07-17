@@ -322,8 +322,8 @@ class OrderItemAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'full_name', 'email', 'phone', 'total_price', 'status', 'created']
-    list_filter = ['status', 'created']
+    list_display = ['id', 'full_name', 'phone', 'total_price', 'delivery_method', 'payment_method', 'status', 'created']
+    list_filter = ['status', 'delivery_method', 'payment_method', 'created']
     search_fields = ['first_name', 'last_name', 'email', 'phone']
     readonly_fields = ['created', 'updated']
     inlines = [OrderItemInline]
@@ -332,8 +332,8 @@ class OrderAdmin(admin.ModelAdmin):
         ('Контактные данные', {
             'fields': ('first_name', 'last_name', 'email', 'phone')
         }),
-        ('Адрес доставки', {
-            'fields': ('address',)
+        ('Доставка и оплата', {
+            'fields': ('delivery_method', 'payment_method', 'address')
         }),
         ('Информация о заказе', {
             'fields': ('total_price', 'status', 'comment')

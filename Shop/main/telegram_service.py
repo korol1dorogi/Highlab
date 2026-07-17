@@ -50,7 +50,9 @@ class TelegramService:
 📞 {order.phone}
 📧 {order.email}
 
-🏠 <b>Адрес доставки:</b>
+🚚 <b>Получение:</b> {order.get_delivery_method_display()}
+💳 <b>Оплата:</b> {order.get_payment_method_display()}
+🏠 <b>Адрес:</b>
 {order.address}
 
 📦 <b>Состав заказа:</b>

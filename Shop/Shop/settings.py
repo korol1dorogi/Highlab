@@ -32,6 +32,27 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0', c
 # Формат значений: со схемой, можно с поддоменным шаблоном — https://*.trycloudflare.com
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 
+# --- HTTPS за обратным прокси / туннелем ---
+# TLS терминируется на прокси (cloudflared / nginx), поэтому доверяем заголовку
+# X-Forwarded-Proto. Без этого Django считает запрос http и строит http://-canonical,
+# http-sitemap и отдаёт cookie без флага Secure (см. SEO/безопасность).
+# ВАЖНО: приложение должно быть доступно ТОЛЬКО через прокси (порт биндить на 127.0.0.1),
+# иначе клиент сможет подделать этот заголовок.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    # Редирект http→https делает прокси/туннель; при прямом заходе подстрахует Django.
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    # HSTS включать осознанно, только когда весь трафик уже на https (иначе можно
+    # заблокировать себе доступ). Значение в секундах, 0 — выключено.
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False, cast=bool)
+    SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
+
 
 # Application definition
 

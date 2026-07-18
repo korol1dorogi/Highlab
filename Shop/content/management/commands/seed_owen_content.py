@@ -5,12 +5,45 @@
 Идемпотентна: повторный запуск обновляет записи по slug, не плодя дубли.
 Запуск:  python manage.py seed_owen_content
 """
+import urllib.request
 from datetime import date
+from io import BytesIO
 
+from PIL import Image
+from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.urls import reverse
 
 from content.models import Project, Article, MediaItem, Service
+
+# База галереи ОВЕН — оттуда берём собственные фото проектов как обложки.
+_IMG = "https://projects121.owen.ru/projectimages"
+ARTICLE_COVER_URL = f"{_IMG}/64/9vets2k1U2bv9EyGxQxkruPuX3OZ77UMYKMfeApI.jpg?guard="
+COVER_MAX_WIDTH = 1400
+
+
+def _download(url):
+    """Скачивает файл по URL и возвращает bytes (или бросает исключение)."""
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=25) as resp:
+        return resp.read()
+
+
+def _fetch_cover(url):
+    """Скачивает изображение и оптимизирует под веб: ресайз по ширине + JPEG q82."""
+    raw = _download(url)
+    try:
+        img = Image.open(BytesIO(raw))
+        if img.mode not in ("RGB", "L"):
+            img = img.convert("RGB")
+        if img.width > COVER_MAX_WIDTH:
+            new_h = round(img.height * COVER_MAX_WIDTH / img.width)
+            img = img.resize((COVER_MAX_WIDTH, new_h), Image.LANCZOS)
+        out = BytesIO()
+        img.save(out, format="JPEG", quality=82, optimize=True)
+        return out.getvalue()
+    except Exception:
+        return raw  # если Pillow не смог обработать — сохраняем оригинал
 
 
 INTERVIEW_URL = (
@@ -23,6 +56,7 @@ CONTEST_URL = "https://projects121.owen.ru/projects/62"
 PROJECTS = [
     {
         "slug": "avtomatizatsiya-kotelnoy-zhivotnovodcheskiy-kompleks",
+        "cover_url": f"{_IMG}/64/5J13rqYRs6Xd01dBO6xzwl8w5Y2AtjWcD0jBVniP.jpg?guard=",
         "order": 1,
         "title": "Автоматизация котельной животноводческого комплекса (Курская область)",
         "sphere": "Агропромышленный комплекс, теплоснабжение",
@@ -61,6 +95,7 @@ PROJECTS = [
     },
     {
         "slug": "avtomatizatsiya-kotelnoy-3-mvt",
+        "cover_url": f"{_IMG}/62/x3Nznv6SYxKK5gXlill6b0mYui94rD2XKr9W2YXh.jpg?guard=",
         "order": 2,
         "title": "Автоматизация котельной 3 МВт на контроллерах ОВЕН КТР-121",
         "sphere": "Промышленная теплоэнергетика",
@@ -93,6 +128,7 @@ PROJECTS = [
     },
     {
         "slug": "avtomatizatsiya-kotelnoy-1-mvt",
+        "cover_url": f"{_IMG}/61/SOtAXJrwiGE6jfzWL9MsROSZwsG3VnafLES1aoKu.jpg?guard=",
         "order": 3,
         "title": "Автоматизация котельной 1 МВт с резервированием на ОВЕН КТР-121",
         "sphere": "Теплоэнергетика",
@@ -125,6 +161,7 @@ PROJECTS = [
     },
     {
         "slug": "rekonstruktsiya-ventilyatsii-zilart",
+        "cover_url": f"{_IMG}/63/5o56nbQVCmtra5AJGCSsOzHwERibl6WbhO7GkWNG.jpg",
         "order": 4,
         "title": "Реконструкция приточной вентиляции офиса на ОВЕН АЙРА360 (ЖК «Зиларт», Москва)",
         "sphere": "Инженерные системы зданий, вентиляция",
@@ -161,7 +198,14 @@ PROJECTS = [
 class Command(BaseCommand):
     help = "Загружает реальные кейсы автоматизации ОВЕН, статью-интервью и упоминания."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--refresh-covers", action="store_true",
+            help="Перекачать и переоптимизировать обложки, даже если они уже загружены.",
+        )
+
     def handle(self, *args, **options):
+        refresh = options.get("refresh_covers", False)
         # 1. Прячем демо-заглушки (не удаляем — можно вернуть в админке).
         ph_p = Project.objects.filter(title__icontains="(пример)").update(is_published=False)
         ph_a = Article.objects.filter(title__icontains="(пример)").update(is_published=False)
@@ -175,11 +219,21 @@ class Command(BaseCommand):
         # 2. Кейсы.
         for data in PROJECTS:
             slug = data["slug"]
-            defaults = {k: v for k, v in data.items() if k != "slug"}
+            cover_url = data.get("cover_url")
+            defaults = {k: v for k, v in data.items() if k not in ("slug", "cover_url")}
             defaults["direction"] = "automation"
             defaults["is_published"] = True
             obj, created = Project.objects.update_or_create(slug=slug, defaults=defaults)
             self.stdout.write(("＋ создан" if created else "↻ обновлён") + f" кейс: {obj.title}")
+            # Обложка — собственное фото проекта из галереи ОВЕН. Не перезаписываем,
+            # если обложка уже загружена вручную в админке.
+            if cover_url and (refresh or not obj.cover):
+                try:
+                    content = _fetch_cover(cover_url)
+                    obj.cover.save(f"{slug}.jpg", ContentFile(content), save=True)
+                    self.stdout.write(f"   обложка загружена ({len(content)} байт)")
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f"   обложка не загружена: {e}"))
 
         # 3. Статья-интервью (по материалам публикации ОВЕН).
         article_body = (
@@ -222,6 +276,13 @@ class Command(BaseCommand):
             },
         )
         self.stdout.write(("＋ создана" if created else "↻ обновлена") + f" статья: {art.title}")
+        if refresh or not art.cover:
+            try:
+                content = _fetch_cover(ARTICLE_COVER_URL)
+                art.cover.save("intervyu-owen-laboratoriya-vt.jpg", ContentFile(content), save=True)
+                self.stdout.write(f"   обложка статьи загружена ({len(content)} байт)")
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"   обложка статьи не загружена: {e}"))
 
         # 4. Упоминания (медиа): интервью и конкурс проектов ОВЕН.
         MediaItem.objects.update_or_create(

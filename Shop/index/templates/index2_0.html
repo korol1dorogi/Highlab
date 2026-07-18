@@ -423,6 +423,8 @@
                     feedback.className = 'form-feedback is-ok';
                     form.reset();
                     if (res.d.captcha_question && captchaQ) { captchaQ.textContent = res.d.captcha_question; }
+                    // Цель Метрики: отправленная заявка
+                    if (window.ym && window.YM_COUNTER_ID) { ym(window.YM_COUNTER_ID, 'reachGoal', 'lead'); }
                 } else {
                     feedback.textContent = (res.d && res.d.message) || 'Проверьте поля: имя и телефон обязательны.';
                     feedback.className = 'form-feedback is-err';

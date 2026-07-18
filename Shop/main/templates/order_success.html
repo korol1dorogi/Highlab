@@ -1,4 +1,5 @@
 {% extends 'shop.html' %}
+{% load l10n %}
 
 {% block title %}Заказ №{{ order.id }} оформлен — {{ site_settings.company_name }}{% endblock %}
 {% block robots %}noindex, nofollow{% endblock %}
@@ -113,4 +114,36 @@
 
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if site_settings.metrika_id %}
+<script>
+(function () {
+    if (!window.ym || !window.YM_COUNTER_ID) { return; }
+    // Защита от повторной отправки при обновлении страницы успеха.
+    var key = 'ym_order_{{ order.id }}';
+    try { if (sessionStorage.getItem(key)) { return; } sessionStorage.setItem(key, '1'); } catch (e) {}
+
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+        ecommerce: {
+            currencyCode: 'RUB',
+            purchase: {
+                actionField: { id: '{{ order.id }}', revenue: '{{ order.total_price|unlocalize }}' },
+                products: [
+                    {% for item in order.items.all %}{
+                        id: '{{ item.product_variant.product.sku|escapejs }}',
+                        name: '{{ item.product_variant.product.name|escapejs }}',
+                        price: {{ item.price|unlocalize }},
+                        quantity: {{ item.quantity }}
+                    }{% if not forloop.last %},{% endif %}{% endfor %}
+                ]
+            }
+        }
+    });
+    ym(window.YM_COUNTER_ID, 'reachGoal', 'order', { order_id: '{{ order.id }}', order_price: '{{ order.total_price|unlocalize }}' });
+})();
+</script>
+{% endif %}
 {% endblock %}

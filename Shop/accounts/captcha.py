@@ -17,6 +17,10 @@ def new_captcha(session, key=SESSION_KEY):
 
 def check_captcha(session, value, key=SESSION_KEY):
     try:
-        return int(str(value).strip()) == int(session.get(key))
+        ok = int(str(value).strip()) == int(session.get(key))
     except (TypeError, ValueError):
         return False
+    if ok:
+        # Одноразовость: решённый ответ нельзя переиспользовать в рамках сессии.
+        session.pop(key, None)
+    return ok

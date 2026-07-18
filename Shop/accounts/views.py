@@ -13,8 +13,11 @@ def register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST, request=request)
         if form.is_valid():
+            old_session_key = request.session.session_key
             user = form.save()
             login(request, user, backend='accounts.backends.EmailOrPhoneBackend')
+            from main.cart import merge_session_cart_into_user
+            merge_session_cart_into_user(request, old_session_key, user)
             messages.success(request, 'Аккаунт создан. Добро пожаловать!')
             return redirect('accounts:profile')
     else:
@@ -36,7 +39,10 @@ def login_view(request):
                 password=form.cleaned_data['password'],
             )
             if user:
+                old_session_key = request.session.session_key
                 login(request, user)
+                from main.cart import merge_session_cart_into_user
+                merge_session_cart_into_user(request, old_session_key, user)
                 messages.success(request, 'Вы вошли в аккаунт.')
                 return redirect(next_url or 'accounts:profile')
             messages.error(request, 'Неверный логин или пароль.')
@@ -54,7 +60,9 @@ def logout_view(request):
 @login_required
 def profile(request):
     from main.models import Order, Review
-    orders = Order.objects.filter(user=request.user).prefetch_related('items').order_by('-created')
+    orders = Order.objects.filter(user=request.user).prefetch_related(
+        'items__product_variant__product'
+    ).order_by('-created')
     reviews = Review.objects.filter(user=request.user).select_related('product').order_by('-created')
     return render(request, 'accounts/profile.html', {'orders': orders, 'reviews': reviews})
 

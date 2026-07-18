@@ -89,10 +89,17 @@ body {
     --bs-btn-color: var(--color-muted); --bs-btn-border-color: var(--color-border);
     --bs-btn-hover-bg: var(--color-ink); --bs-btn-hover-border-color: var(--color-ink); --bs-btn-hover-color: #fff;
 }
-.btn-danger, .btn-outline-danger {
-    --bs-btn-color: var(--color-danger); --bs-btn-border-color: var(--color-danger);
+.btn-danger {
+    --bs-btn-color: #fff; --bs-btn-border-color: var(--color-danger);
     --bs-btn-bg: var(--color-danger);
-    --bs-btn-hover-bg: #c93a3f; --bs-btn-hover-border-color: #c93a3f;
+    --bs-btn-hover-bg: #c93a3f; --bs-btn-hover-border-color: #c93a3f; --bs-btn-hover-color: #fff;
+}
+/* Контурная: красный текст/рамка на прозрачном фоне, заливка только на hover. */
+.btn-outline-danger {
+    --bs-btn-color: var(--color-danger); --bs-btn-border-color: var(--color-danger);
+    --bs-btn-bg: transparent;
+    --bs-btn-hover-bg: var(--color-danger); --bs-btn-hover-border-color: var(--color-danger); --bs-btn-hover-color: #fff;
+    --bs-btn-active-bg: var(--color-danger); --bs-btn-active-border-color: var(--color-danger); --bs-btn-active-color: #fff;
 }
 .btn-secondary {
     --bs-btn-bg: var(--accent-muted); --bs-btn-border-color: var(--accent-muted);
@@ -445,6 +452,10 @@ body {
     overflow: hidden;
 }
 .custom-notification.show { transform: translateX(0); opacity: 1; }
+.custom-notification.is-clickable { cursor: pointer; }
+.custom-notification.is-clickable:hover { box-shadow: 0 6px 20px rgba(0,0,0,.14); }
+.custom-notification.is-clickable:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.notification-cta { display: block; margin-top: 3px; font-size: var(--fs-small); font-weight: 700; color: var(--color-primary); }
 .custom-notification.success { border-left-color: var(--color-success); }
 .custom-notification.danger  { border-left-color: var(--color-danger); }
 .custom-notification.info    { border-left-color: var(--color-primary); }

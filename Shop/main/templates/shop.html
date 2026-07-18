@@ -79,6 +79,7 @@
 
     <!-- Bootstrap JS нужен для сворачивания дерева категорий (локально) -->
     <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script>window.CART_URL = "{% url 'shop:cart_detail' %}";</script>
     <script src="{% static 'js/shop.js' %}"></script>
     <script>
         // Мобильное меню единой шапки

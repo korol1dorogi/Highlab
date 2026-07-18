@@ -32,20 +32,35 @@
             info: 'bi-info-circle-fill'
         };
         var title = type === 'success' ? 'Добавлено' : (type === 'danger' ? 'Внимание' : 'Инфо');
+        var cartUrl = window.CART_URL || '/shop_electronic/cart/';
+        var isSuccess = type === 'success';
 
         var note = document.createElement('div');
-        note.className = 'custom-notification ' + type;
+        note.className = 'custom-notification ' + type + (isSuccess ? ' is-clickable' : '');
         note.innerHTML =
             '<div class="d-flex align-items-center p-3">' +
                 '<div class="notification-icon"><i class="bi ' + (icons[type] || icons.info) + '"></i></div>' +
-                '<div class="notification-content"><strong class="me-1">' + title + '.</strong> ' + message + '</div>' +
+                '<div class="notification-content"><strong class="me-1">' + title + '.</strong> ' + message +
+                    (isSuccess ? '<span class="notification-cta">Перейти в корзину →</span>' : '') +
+                '</div>' +
                 '<button type="button" class="notification-close" aria-label="Закрыть">' +
                     '<i class="bi bi-x"></i></button>' +
             '</div>';
 
-        note.querySelector('.notification-close').addEventListener('click', function () {
+        note.querySelector('.notification-close').addEventListener('click', function (ev) {
+            ev.stopPropagation();
             note.remove();
         });
+
+        // Клик по уведомлению об успешном добавлении ведёт в корзину.
+        if (isSuccess) {
+            note.setAttribute('role', 'link');
+            note.setAttribute('tabindex', '0');
+            note.addEventListener('click', function () { window.location.href = cartUrl; });
+            note.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); window.location.href = cartUrl; }
+            });
+        }
 
         container.appendChild(note);
         requestAnimationFrame(function () { note.classList.add('show'); });

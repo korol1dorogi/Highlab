@@ -1,28 +1,71 @@
 # shop/cart.py
 from .models import Cart, CartItem, ProductVariant
 
+
+def _merge_carts(primary, others):
+    """Переносит позиции из корзин others в primary и удаляет пустые корзины-дубли.
+    Количество одинаковых вариантов суммируется с ограничением по остатку на складе."""
+    for other in others:
+        if other.pk == primary.pk:
+            continue
+        for item in other.items.all():
+            existing = primary.items.filter(product_variant=item.product_variant).first()
+            if existing:
+                total = existing.quantity + item.quantity
+                cap = item.product_variant.quantity or total
+                existing.quantity = min(total, cap)
+                existing.save()
+                item.delete()
+            else:
+                item.cart = primary
+                item.save()
+        other.delete()
+
+
+def merge_session_cart_into_user(request, old_session_key, user):
+    """При входе/регистрации переносит анонимную корзину (по старому ключу сессии)
+    в корзину пользователя, чтобы набранные товары не терялись."""
+    if not old_session_key:
+        return
+    anon_carts = list(Cart.objects.filter(session_key=old_session_key, user__isnull=True).order_by('id'))
+    if not anon_carts:
+        return
+    user_carts = list(Cart.objects.filter(user=user).order_by('id'))
+    if user_carts:
+        primary = user_carts[0]
+        _merge_carts(primary, user_carts[1:])
+    else:
+        primary = Cart.objects.create(user=user)
+    _merge_carts(primary, anon_carts)
+
+
 class CartManager:
     def __init__(self, request):
         self.request = request
         self.cart = self._get_or_create_cart()
-    
+
+    def _resolve_cart(self, **lookup):
+        """Находит или создаёт корзину, безопасно переживая дубли (гонка get_or_create):
+        если корзин несколько — сливает их в самую раннюю, а не падает 500."""
+        carts = list(Cart.objects.filter(**lookup).order_by('id'))
+        if not carts:
+            return Cart.objects.create(**lookup)
+        primary = carts[0]
+        if len(carts) > 1:
+            _merge_carts(primary, carts[1:])
+        return primary
+
     def _get_or_create_cart(self):
         """Создаем или получаем корзину - РАБОТАЕТ ДЛЯ АНОНИМОВ"""
         if self.request.user.is_authenticated:
             # Для авторизованных пользователей
-            cart, created = Cart.objects.get_or_create(user=self.request.user)
-        else:
-            # Для анонимных пользователей (через сессии)
+            return self._resolve_cart(user=self.request.user)
+        # Для анонимных пользователей (через сессии)
+        session_key = self.request.session.session_key
+        if not session_key:
+            self.request.session.create()
             session_key = self.request.session.session_key
-            if not session_key:
-                self.request.session.create()
-                session_key = self.request.session.session_key
-            
-            cart, created = Cart.objects.get_or_create(
-                session_key=session_key,
-                user=None
-            )
-        return cart
+        return self._resolve_cart(session_key=session_key, user=None)
     
     def add(self, variant_id, quantity=1):
         """Добавление варианта товара в корзину"""

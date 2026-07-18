@@ -3,7 +3,7 @@ import logging
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Q
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse, Http404
@@ -236,25 +236,39 @@ def add_review(request, product_slug):
     Особенности: проверка авторизации, валидация
     """
     product = get_object_or_404(Product, slug=product_slug, available=True)
-    
-    rating = request.POST.get('rating')
+
+    # Валидация ввода: оценка 1..5 и непустой текст (иначе 500 / мусор в БД).
+    try:
+        rating = int(request.POST.get('rating', ''))
+    except (TypeError, ValueError):
+        rating = 0
     comment = request.POST.get('comment', '').strip()
-    
+
+    if rating < 1 or rating > 5:
+        messages.error(request, 'Пожалуйста, выберите оценку от 1 до 5.')
+        return redirect('shop:product_detail', slug=product_slug)
+    if not comment:
+        messages.error(request, 'Пожалуйста, напишите текст отзыва.')
+        return redirect('shop:product_detail', slug=product_slug)
+
     # Проверяем, не оставлял ли пользователь уже отзыв
-    existing_review = Review.objects.filter(product=product, user=request.user).first()
-    if existing_review:
+    if Review.objects.filter(product=product, user=request.user).exists():
         messages.error(request, 'Вы уже оставляли отзыв на этот товар')
         return redirect('shop:product_detail', slug=product_slug)
-    
-    # Создаем отзыв
-    review = Review.objects.create(
-        product=product,
-        user=request.user,
-        rating=rating,
-        comment=comment,
-        is_approved=False  # Требует модерации
-    )
-    
+
+    # Создаём отзыв; на гонке двойной отправки ловим IntegrityError (unique_together)
+    try:
+        Review.objects.create(
+            product=product,
+            user=request.user,
+            rating=rating,
+            comment=comment,
+            is_approved=False,  # Требует модерации
+        )
+    except IntegrityError:
+        messages.error(request, 'Вы уже оставляли отзыв на этот товар')
+        return redirect('shop:product_detail', slug=product_slug)
+
     messages.success(request, 'Ваш отзыв отправлен на модерацию')
     return redirect('shop:product_detail', slug=product_slug)
 
@@ -601,6 +615,15 @@ def download_order_pdf(request, order_id):
     if not _can_access_order(request, order):
         return HttpResponse("Доступ запрещен", status=403)
 
+    # Реальные реквизиты компании из настроек сайта (а не заглушки).
+    from index.models import SiteSettings, TeamContact
+    site = SiteSettings.load()
+    contact = TeamContact.objects.filter(is_active=True).first()
+    company_name = site.company_name or 'Лаборатория ВТ'
+    company_phone = contact.phone if contact and contact.phone else ''
+    company_email = site.email or ''
+    company_address = site.address or ''
+
     # Создаем буфер для PDF
     buffer = BytesIO()
     
@@ -653,7 +676,7 @@ def download_order_pdf(request, order_id):
     
     # Заголовок - увеличенный размер
     p.setFont(font_name, 18)
-    p.drawString(50, y_position, "Highlab Store")
+    p.drawString(50, y_position, company_name)
     y_position -= 35
     
     # Номер заказа
@@ -767,14 +790,22 @@ def download_order_pdf(request, order_id):
     p.line(50, y_position, width-50, y_position)
     y_position -= 20
     
-    # Подвал
+    # Подвал — реальные реквизиты компании
     p.setFont(font_name, 9)
     p.drawString(50, y_position, "Благодарим за ваш заказ!")
     y_position -= 15
-    p.drawString(50, y_position, "Highlab Store | Телефон: +7 (XXX) XXX-XX-XX")
+
+    contacts_parts = [company_name]
+    if company_phone:
+        contacts_parts.append(f"Телефон: {company_phone}")
+    p.drawString(50, y_position, " | ".join(contacts_parts))
     y_position -= 15
-    p.drawString(50, y_position, "Email: info@highlab.ru")
-    y_position -= 15
+    if company_email:
+        p.drawString(50, y_position, f"Email: {company_email}")
+        y_position -= 15
+    if company_address:
+        p.drawString(50, y_position, f"Адрес: {company_address}")
+        y_position -= 15
     p.drawString(50, y_position, f"Сформировано: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
     
     # Сохраняем PDF

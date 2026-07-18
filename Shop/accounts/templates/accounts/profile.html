@@ -4,6 +4,16 @@
 {% block robots %}noindex, nofollow{% endblock %}
 
 {% block content %}
+<style>
+    .profile-order__item-link { color: var(--color-ink); font-weight: 600; text-decoration: none; border-bottom: 1px solid transparent; }
+    .profile-order__item-link:hover { color: var(--color-primary); border-bottom-color: currentColor; }
+    .profile-order__review-link {
+        display: inline-block; margin-left: 8px; font-family: var(--font-mono);
+        font-size: var(--fs-small); color: var(--color-primary); text-decoration: none; white-space: nowrap;
+    }
+    .profile-order__review-link:hover { text-decoration: underline; }
+    .profile-order__items li { margin-bottom: 6px; }
+</style>
 <section class="section">
     <div class="container">
         <div class="profile-head">
@@ -48,7 +58,10 @@
                     </div>
                     <ul class="profile-order__items">
                         {% for item in order.items.all %}
-                        <li>{{ item.product_variant.product.name }}{% if item.product_variant.name %} — {{ item.product_variant.name }}{% endif %} · {{ item.quantity }} × {{ item.price }} ₽</li>
+                        <li>
+                            <a class="profile-order__item-link" href="{{ item.product_variant.product.get_absolute_url }}">{{ item.product_variant.product.name }}</a>{% if item.product_variant.name %} — {{ item.product_variant.name }}{% endif %} · {{ item.quantity }} × {{ item.price }} ₽
+                            <a class="profile-order__review-link" href="{{ item.product_variant.product.get_absolute_url }}#reviews">оставить отзыв →</a>
+                        </li>
                         {% endfor %}
                     </ul>
                 </div>

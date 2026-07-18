@@ -34,13 +34,15 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             {% if item.product_variant.product.main_image %}
-                                            <img src="{{ item.product_variant.product.main_image.url }}" 
+                                            <img src="{{ item.product_variant.product.main_image.url }}"
                                                  alt="{{ item.product_variant.product.name }}"
-                                                 class="img-thumbnail me-3" 
+                                                 class="img-thumbnail me-3"
                                                  style="width: 80px; height: 80px; object-fit: cover;">
                                             {% endif %}
                                             <div>
-                                                <h6 class="mb-1">{{ item.product_variant.product.name }}</h6>
+                                                <h6 class="mb-1">
+                                                    <a href="{{ item.product_variant.product.get_absolute_url }}" class="text-decoration-none">{{ item.product_variant.product.name }}</a>
+                                                </h6>
                                                 {% if item.product_variant.name %}
                                                     <small class="text-muted">Вариант: {{ item.product_variant.name }}</small>
                                                     <br>
@@ -53,21 +55,16 @@
                                         <span class="h6">{{ item.price }} ₽</span>
                                     </td>
                                     <td class="align-middle">
-                                        <form method="post" action="{% url 'shop:cart_update' item.product_variant.id %}" class="cart-update-form d-inline" data-variant-id="{{ item.product_variant.id }}" id="form-{{ item.product_variant.id }}">
-                                            {% csrf_token %}
-                                            <div class="input-group input-group-sm" style="width: 140px;">
-                                                <button type="submit" class="btn btn-outline-secondary" name="action" value="decrease">
-                                                    -
-                                                </button>
-                                                <span class="form-control text-center" data-qty="{{ item.product_variant.id }}">
-                                                    {{ item.quantity }}
-                                                </span>
-                                                <button type="submit" class="btn btn-outline-secondary" name="action" value="increase">
-                                                    +
-                                                </button>
-                                            </div>
-                                            <input type="hidden" name="current_quantity" value="{{ item.quantity }}">
-                                        </form>
+                                        <div class="input-group input-group-sm cart-qty-control" style="width: 130px;"
+                                             data-variant-id="{{ item.product_variant.id }}"
+                                             data-url="{% url 'shop:cart_update' item.product_variant.id %}"
+                                             data-max="{{ item.product_variant.quantity }}">
+                                            <button type="button" class="btn btn-outline-secondary cart-qty-btn" data-step="-1" aria-label="Уменьшить">−</button>
+                                            <input type="number" class="form-control text-center cart-qty-input"
+                                                   value="{{ item.quantity }}" min="1" max="{{ item.product_variant.quantity }}"
+                                                   inputmode="numeric" aria-label="Количество">
+                                            <button type="button" class="btn btn-outline-secondary cart-qty-btn" data-step="1" aria-label="Увеличить">+</button>
+                                        </div>
                                     </td>
                                     <td class="align-middle">
                                         <span class="h6 text-primary"><span data-item-total="{{ item.product_variant.id }}">{{ item.total_price }}</span> ₽</span>
@@ -75,8 +72,8 @@
                                     <td class="align-middle">
                                         <form method="post" action="{% url 'shop:cart_remove' item.product_variant.id %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                <i class="bi bi-trash"></i>
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Удалить товар из корзины" aria-label="Удалить товар из корзины">
+                                                <i class="bi bi-trash"></i> Удалить
                                             </button>
                                         </form>
                                     </td>
@@ -94,7 +91,9 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-8">
-                                    <h6 class="card-title">{{ item.product_variant.product.name }}</h6>
+                                    <h6 class="card-title">
+                                        <a href="{{ item.product_variant.product.get_absolute_url }}" class="text-decoration-none">{{ item.product_variant.product.name }}</a>
+                                    </h6>
                                     {% if item.product_variant.name %}
                                         <p class="text-muted small mb-1">Вариант: {{ item.product_variant.name }}</p>
                                     {% endif %}
@@ -104,33 +103,28 @@
                                 </div>
                                 <div class="col-4 text-end">
                                     {% if item.product_variant.product.main_image %}
-                                    <img src="{{ item.product_variant.product.main_image.url }}" 
+                                    <img src="{{ item.product_variant.product.main_image.url }}"
                                          alt="{{ item.product_variant.product.name }}"
-                                         class="img-fluid rounded mb-2" 
+                                         class="img-fluid rounded mb-2"
                                          style="max-height: 80px; object-fit: cover;">
                                     {% endif %}
                                 </div>
                             </div>
-                            
+
                             <div class="row align-items-center">
-                                <div class="col-6">
-                                    <form method="post" action="{% url 'shop:cart_update' item.product_variant.id %}" class="cart-update-form" data-variant-id="{{ item.product_variant.id }}">
-                                        {% csrf_token %}
-                                        <div class="input-group input-group-sm">
-                                            <button type="submit" class="btn btn-outline-secondary" name="action" value="decrease">
-                                                -
-                                            </button>
-                                            <span class="form-control text-center cart-quantity" data-variant-id="{{ item.product_variant.id }}" data-qty="{{ item.product_variant.id }}">
-                                                {{ item.quantity }}
-                                            </span>
-                                            <button type="submit" class="btn btn-outline-secondary" name="action" value="increase">
-                                                +
-                                            </button>
-                                        </div>
-                                        <input type="hidden" name="current_quantity" value="{{ item.quantity }}" id="current-quantity-mobile-{{ item.product_variant.id }}">
-                                    </form>
+                                <div class="col-7">
+                                    <div class="input-group input-group-sm cart-qty-control"
+                                         data-variant-id="{{ item.product_variant.id }}"
+                                         data-url="{% url 'shop:cart_update' item.product_variant.id %}"
+                                         data-max="{{ item.product_variant.quantity }}">
+                                        <button type="button" class="btn btn-outline-secondary cart-qty-btn" data-step="-1" aria-label="Уменьшить">−</button>
+                                        <input type="number" class="form-control text-center cart-qty-input"
+                                               value="{{ item.quantity }}" min="1" max="{{ item.product_variant.quantity }}"
+                                               inputmode="numeric" aria-label="Количество">
+                                        <button type="button" class="btn btn-outline-secondary cart-qty-btn" data-step="1" aria-label="Увеличить">+</button>
+                                    </div>
                                 </div>
-                                <div class="col-6 text-end">
+                                <div class="col-5 text-end">
                                     <form method="post" action="{% url 'shop:cart_remove' item.product_variant.id %}">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -158,7 +152,7 @@
                     <a href="{% url 'shop:product_list' %}" class="btn btn-outline-primary order-2 order-md-1">
                         <i class="bi bi-arrow-left"></i> Продолжить покупки
                     </a>
-                    
+
                     <div class="d-flex flex-column flex-md-row gap-2 order-1 order-md-2">
                         <form method="post" action="{% url 'shop:cart_clear' %}">
                             {% csrf_token %}
@@ -166,7 +160,7 @@
                                 <i class="bi bi-x-circle"></i> Очистить корзину
                             </button>
                         </form>
-                        
+
                         <a href="{% url 'shop:checkout' %}" class="btn btn-success">
                             <i class="bi bi-credit-card"></i> Оформить заказ
                         </a>
@@ -191,58 +185,79 @@
 {% block scripts %}
 <script>
 // Изменение количества в корзине без перезагрузки страницы.
-// Обработчик вешаем только на формы +/- (.cart-update-form); удаление и очистка
-// корзины отправляются обычным сабмитом. При любой неожиданности — надёжный fallback (reload).
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.cart-update-form').forEach(function (form) {
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            var vid = form.getAttribute('data-variant-id');
-            var action = (e.submitter && e.submitter.value) ? e.submitter.value : 'increase';
-            var data = new FormData(form);
-            data.set('action', action);
+// Кнопки +/- и ручной ввод числа отправляют абсолютное количество; при любой
+// неожиданности — надёжный fallback (перезагрузка). Удаление/очистка — обычным сабмитом.
+(function () {
+    function getCsrf() {
+        var el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        return el ? el.value : '';
+    }
 
-            fetch(form.action, {
-                method: 'POST',
-                body: data,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            }).then(function (r) {
-                if (!r.ok) throw new Error('bad status');
-                return r.json();
-            }).then(function (result) {
-                if (!result.success) {
-                    if (window.showNotification) {
-                        window.showNotification(result.message || 'Не удалось обновить количество', 'danger');
-                    }
-                    return;
+    function syncInputs(vid, qty) {
+        document.querySelectorAll('.cart-qty-control[data-variant-id="' + vid + '"] .cart-qty-input')
+            .forEach(function (i) { i.value = qty; });
+    }
+
+    function updateQty(control, desired) {
+        var vid = control.getAttribute('data-variant-id');
+        var url = control.getAttribute('data-url');
+        var max = parseInt(control.getAttribute('data-max'), 10);
+        var qty = parseInt(desired, 10);
+        if (isNaN(qty) || qty < 1) { qty = 1; }
+        if (!isNaN(max) && max > 0 && qty > max) {
+            qty = max;
+            if (window.showNotification) { window.showNotification('Больше нет на складе (максимум ' + max + ')', 'info'); }
+        }
+        syncInputs(vid, qty);
+
+        var body = new URLSearchParams();
+        body.set('quantity', qty);
+        body.set('current_quantity', qty);
+        body.set('csrfmiddlewaretoken', getCsrf());
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: body.toString()
+        }).then(function (r) {
+            if (!r.ok) { throw new Error('bad status'); }
+            return r.json();
+        }).then(function (res) {
+            if (!res.success) {
+                if (window.showNotification) {
+                    window.showNotification(res.message || 'Не удалось обновить количество', 'danger');
                 }
-                var removed = (result.current_quantity === undefined || result.current_quantity === 0);
-                if (removed) {
-                    ['cart-item-' + vid, 'cart-mobile-item-' + vid].forEach(function (id) {
-                        var el = document.getElementById(id);
-                        if (el) { el.remove(); }
-                    });
-                } else {
-                    document.querySelectorAll('[data-qty="' + vid + '"]').forEach(function (el) {
-                        el.textContent = result.current_quantity;
-                    });
-                    document.querySelectorAll('[data-item-total="' + vid + '"]').forEach(function (el) {
-                        el.textContent = result.item_total;
-                    });
-                    form.querySelectorAll('input[name="current_quantity"]').forEach(function (i) {
-                        i.value = result.current_quantity;
-                    });
-                }
-                var grand = document.getElementById('cart-grand-total');
-                if (grand && result.total_price !== undefined) { grand.textContent = result.total_price; }
-                if (window.updateCartBadge) { window.updateCartBadge(result.total_quantity); }
-                // Корзина опустела — показываем пустое состояние.
-                if (result.total_quantity === 0) { location.reload(); }
-            }).catch(function () {
                 location.reload();
+                return;
+            }
+            syncInputs(vid, res.current_quantity);
+            document.querySelectorAll('[data-item-total="' + vid + '"]').forEach(function (el) {
+                el.textContent = res.item_total;
             });
-        });
+            var grand = document.getElementById('cart-grand-total');
+            if (grand && res.total_price !== undefined) { grand.textContent = res.total_price; }
+            if (window.updateCartBadge) { window.updateCartBadge(res.total_quantity); }
+            if (res.total_quantity === 0) { location.reload(); }
+        }).catch(function () { location.reload(); });
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.cart-qty-btn');
+        if (!btn) { return; }
+        var control = btn.closest('.cart-qty-control');
+        var input = control.querySelector('.cart-qty-input');
+        var step = parseInt(btn.getAttribute('data-step'), 10) || 0;
+        updateQty(control, (parseInt(input.value, 10) || 1) + step);
     });
-});
+
+    document.addEventListener('change', function (e) {
+        var input = e.target.closest('.cart-qty-input');
+        if (!input) { return; }
+        updateQty(input.closest('.cart-qty-control'), input.value);
+    });
+})();
 </script>
 {% endblock %}

@@ -1,9 +1,15 @@
 {% extends 'shop.html' %}
 
-{% block title %}{% if current_category %}{{ current_category.name }} — купить в Курске{% else %}Каталог техники и комплектующих{% endif %} | {{ site_settings.company_name }}{% endblock %}
-{% block meta_description %}{% if current_category and current_category.description %}{{ current_category.description|striptags|truncatechars:160 }}{% elif current_category %}{{ current_category.name }} в магазине Лаборатории ВТ, Курск — проверенные товары с гарантией качества от мастеров.{% else %}Каталог Лаборатории ВТ: комплектующие, оборудование и Б/У техника с гарантией мастеров. Курск.{% endif %}{% endblock %}
+{% block title %}{% if current_category %}{{ current_category.name }} — купить в Курске{% else %}Каталог техники и комплектующих{% endif %}{% if products.number > 1 %} — страница {{ products.number }}{% endif %} | {{ site_settings.company_name }}{% endblock %}
+{% block meta_description %}{% if current_category and current_category.description %}{{ current_category.description|striptags|truncatechars:160 }}{% elif current_category %}{{ current_category.name }} в магазине Лаборатории ВТ, Курск — проверенные товары с гарантией качества от мастеров.{% else %}Каталог Лаборатории ВТ: комплектующие, оборудование и Б/У техника с гарантией мастеров. Курск.{% endif %}{% if products.number > 1 %} Страница {{ products.number }}.{% endif %}{% endblock %}
 {% block og_title %}{% if current_category %}{{ current_category.name }}{% else %}Каталог{% endif %} — {{ site_settings.company_name }}{% endblock %}
 {% block og_description %}{% if current_category and current_category.description %}{{ current_category.description|striptags|truncatechars:200 }}{% else %}Проверенные комплектующие и техника с гарантией мастеров — Курск.{% endif %}{% endblock %}
+
+{# Отфильтрованные/поисковые/сортированные выдачи — низкоценные дубли: закрываем от индекса. #}
+{% block robots %}{% if current_filters.search or current_filters.min_price or current_filters.max_price or current_filters.sort and current_filters.sort != 'default' %}noindex, follow{% else %}index, follow{% endif %}{% endblock %}
+
+{# Canonical: чистый URL раздела; для страниц пагинации без фильтров — self-canonical с ?page=N. #}
+{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% if products.number > 1 and not current_filters.search and not current_filters.min_price and not current_filters.max_price %}{% if current_filters.sort == 'default' or not current_filters.sort %}?page={{ products.number }}{% endif %}{% endif %}{% endblock %}
 
 {% block content %}
 <!-- Хлебные крошки -->

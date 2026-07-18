@@ -35,6 +35,7 @@ class Service(models.Model):
     direction = models.CharField(max_length=20, choices=DIRECTION_CHOICES, default='other', verbose_name='Направление')
     order = models.PositiveIntegerField(default=0, verbose_name='Порядок')
     is_active = models.BooleanField(default=True, verbose_name='Показывать')
+    updated = models.DateTimeField(auto_now=True, verbose_name='Обновлена')
 
     class Meta:
         ordering = ['order', 'id']
@@ -70,6 +71,7 @@ class Project(models.Model):
     is_published = models.BooleanField(default=True, verbose_name='Опубликован')
     order = models.PositiveIntegerField(default=0, verbose_name='Порядок (закрепление)')
     created = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
+    updated = models.DateTimeField(auto_now=True, verbose_name='Обновлён')
 
     class Meta:
         ordering = ['order', '-published_at', '-id']
@@ -99,6 +101,7 @@ class Article(models.Model):
     published_at = models.DateField(default=date.today, verbose_name='Дата публикации')
     is_published = models.BooleanField(default=True, verbose_name='Опубликована')
     created = models.DateTimeField(auto_now_add=True, verbose_name='Создана')
+    updated = models.DateTimeField(auto_now=True, verbose_name='Обновлена')
 
     class Meta:
         ordering = ['-published_at', '-id']

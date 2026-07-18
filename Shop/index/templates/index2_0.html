@@ -15,11 +15,14 @@
         "description": "Промышленная автоматизация АСУ ТП, разработка ПО, ремонт электроники, магазин электроники",
         "url": "{{ request.scheme }}://{{ request.get_host }}/",
         "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.svg' %}",
+        "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'og-image.png' %}",
         "telephone": "+7-951-326-60-10",
         "email": "{{ site_settings.email }}",
-        "address": {"@type": "PostalAddress", "streetAddress": "{{ site_settings.address }}", "addressLocality": "Курск", "addressCountry": "RU"},
-        "openingHours": "Mo-Fr 09:00-18:00",
-        "areaServed": "Курск, Курская область",
+        "priceRange": "₽₽",
+        "address": {"@type": "PostalAddress", "streetAddress": "{{ site_settings.address }}", "addressLocality": "Курск", "addressRegion": "Курская область", "postalCode": "305000", "addressCountry": "RU"},
+        "geo": {"@type": "GeoCoordinates", "latitude": 51.730133, "longitude": 36.165446},
+        "openingHoursSpecification": [{"@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "09:00", "closes": "18:00"}],
+        "areaServed": [{"@type": "City", "name": "Курск"}, {"@type": "AdministrativeArea", "name": "Курская область"}],
         "serviceType": "Промышленная автоматизация АСУ ТП, разработка ПО, ремонт компьютеров и электроники"{% if site_settings.vk_url %},
         "sameAs": ["{{ site_settings.vk_url }}"]{% endif %}
     }

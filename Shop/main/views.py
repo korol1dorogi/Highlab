@@ -205,9 +205,13 @@ class ProductDetailView(DetailView):
             available=True
         ).exclude(id=product.id)[:4]
         
-        # Одобренные отзывы
-        context['approved_reviews'] = product.reviews.filter(is_approved=True)
-        
+        # Одобренные отзывы + агрегат для микроразметки (звёзды в выдаче)
+        from django.db.models import Avg
+        approved = product.reviews.filter(is_approved=True)
+        context['approved_reviews'] = approved
+        context['review_count'] = approved.count()
+        context['review_avg'] = approved.aggregate(avg=Avg('rating'))['avg']
+
         return context
 
 class CategoryListView(ListView):

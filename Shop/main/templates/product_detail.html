@@ -1,6 +1,6 @@
 <!-- templates/shop/product_detail.html -->
 {% extends 'shop.html' %}
-{% load static l10n %}
+{% load static l10n shop_extras %}
 
 {% block title %}{{ product.name }} — купить в Курске | {{ site_settings.company_name }}{% endblock %}
 {% block meta_description %}{{ product.name }}{% if product.description %} — {{ product.description|striptags|truncatechars:150 }}{% else %}. Купить в Курске с гарантией качества от мастеров Лаборатории ВТ.{% endif %}{% endblock %}
@@ -24,8 +24,16 @@
         "priceCurrency": "RUB",
         "price": "{{ product.min_price|unlocalize }}",
         "availability": "https://schema.org/{% if product.in_stock %}InStock{% else %}OutOfStock{% endif %}",
-        "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
-    }
+        "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+        "seller": {"@type": "Organization", "name": "{{ site_settings.company_name|escapejs }}"}
+    }{% if review_count %},
+    "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "{{ review_avg|stringformat:'.1f' }}",
+        "reviewCount": {{ review_count }},
+        "bestRating": "5",
+        "worstRating": "1"
+    }{% endif %}
 }
 </script>
 <script type="application/ld+json">
@@ -59,13 +67,14 @@
         <div class="card">
             <!-- Главное изображение - адаптивное -->
             <div class="product-detail-image-container">
-                <img 
+                <img
                     {% if product.main_image %}
-                    src="{{ product.main_image.url }}"
+                    src="{% thumb product.main_image 800 %}"
+                    fetchpriority="high" decoding="async" loading="eager"
                     {% else %}
                     src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='16' fill='%236c757d'%3EНет изображения%3C/text%3E%3C/svg%3E"
                     {% endif %}
-                    alt="{{ product.name }}"
+                    alt="{{ product.name }} — купить в Курске"
                     class="card-img-top product-detail-image w-100"
                     id="main-product-image"
                 >

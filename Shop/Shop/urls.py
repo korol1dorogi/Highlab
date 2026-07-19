@@ -6,7 +6,7 @@ from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 
 from .sitemaps import sitemaps as all_sitemaps
-from .seo_views import robots_txt
+from .seo_views import robots_txt, site_verification, SITE_VERIFICATIONS
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,6 +14,9 @@ urlpatterns = [
     # SEO
     path('sitemap.xml', sitemap, {'sitemaps': all_sitemaps}, name='sitemap'),
     path('robots.txt', robots_txt, name='robots'),
+
+    # Файлы верификации веб-мастеров (Яндекс/Google) — в корне сайта
+    *[path(fn, site_verification, {'filename': fn}) for fn in SITE_VERIFICATIONS],
 
     # Rich-text редактор (загрузка изображений в статьи/кейсы)
     path('ckeditor5/', include('django_ckeditor_5.urls')),

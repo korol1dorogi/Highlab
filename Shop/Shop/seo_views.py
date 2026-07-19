@@ -1,5 +1,27 @@
-"""Простые SEO-эндпоинты: robots.txt."""
-from django.http import HttpResponse
+"""Простые SEO-эндпоинты: robots.txt и файлы верификации веб-мастеров."""
+from django.http import HttpResponse, Http404
+
+
+# Файлы подтверждения прав в веб-мастерах (Яндекс, Google и т.п.):
+# имя файла в корне сайта -> его содержимое.
+SITE_VERIFICATIONS = {
+    'yandex_8812ea615580c1d0.html': (
+        '<html>\n'
+        '    <head>\n'
+        '        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n'
+        '    </head>\n'
+        '    <body>Verification: 8812ea615580c1d0</body>\n'
+        '</html>\n'
+    ),
+}
+
+
+def site_verification(request, filename):
+    """Отдаёт файл подтверждения прав (Яндекс.Вебмастер и др.) из корня сайта."""
+    content = SITE_VERIFICATIONS.get(filename)
+    if content is None:
+        raise Http404()
+    return HttpResponse(content, content_type='text/html; charset=utf-8')
 
 
 def robots_txt(request):

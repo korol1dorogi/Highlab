@@ -7,6 +7,7 @@ from django.contrib.sitemaps.views import sitemap
 
 from .sitemaps import sitemaps as all_sitemaps
 from .seo_views import robots_txt, site_verification, SITE_VERIFICATIONS
+from . import admin_groups  # noqa: F401 — применяет тематическую группировку админки
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -57,6 +57,7 @@ if not DEBUG:
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',  # тема админки — должна идти ПЕРЕД django.contrib.admin
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -247,3 +248,76 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 # Если брокер недоступен (например, локально без Redis) — задачи выполнятся синхронно.
 CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', default=False, cast=bool)
+
+# --- Оформление админ-панели (django-jazzmin) ---
+# Тематическая группировка моделей задаётся в Shop/admin_groups.py (кастомный get_app_list).
+# Иконки ниже привязаны к синтетическим app_label групп: "grp_<группа>.<модель>".
+JAZZMIN_SETTINGS = {
+    'site_title': 'Лаборатория ВТ',
+    'site_header': 'Лаборатория ВТ',
+    'site_brand': 'Лаборатория ВТ',
+    'welcome_sign': 'Панель управления сайтом «Лаборатория ВТ»',
+    'copyright': 'Лаборатория ВТ',
+    'search_model': ['main.Product', 'index.Lead'],
+    'show_ui_builder': False,
+    'changeform_format': 'horizontal_tabs',
+    'language_chooser': False,
+    'related_modal_active': True,
+    'topmenu_links': [
+        {'name': 'Открыть сайт', 'url': '/', 'new_window': True},
+        {'model': 'main.order'},
+        {'model': 'index.lead'},
+    ],
+    'default_icon_parents': 'fas fa-folder',
+    'default_icon_children': 'fas fa-circle',
+    'icons': {
+        # Контент
+        'grp_content.service': 'fas fa-screwdriver-wrench',
+        'grp_content.project': 'fas fa-diagram-project',
+        'grp_content.article': 'fas fa-newspaper',
+        'grp_content.faqitem': 'fas fa-circle-question',
+        'grp_content.mediaitem': 'fas fa-photo-film',
+        'grp_content.landing': 'fas fa-bullhorn',
+        # Оформление сайта
+        'grp_design.servicecard': 'fas fa-grip',
+        'grp_design.advantage': 'fas fa-circle-check',
+        'grp_design.companystat': 'fas fa-chart-simple',
+        'grp_design.teamcontact': 'fas fa-address-card',
+        'grp_design.partner': 'fas fa-handshake',
+        # Настройки
+        'grp_settings.sitesettings': 'fas fa-gear',
+        # Магазин
+        'grp_shop.category': 'fas fa-folder-tree',
+        'grp_shop.product': 'fas fa-box',
+        'grp_shop.productvariant': 'fas fa-boxes-stacked',
+        'grp_shop.productproperty': 'fas fa-list',
+        'grp_shop.productimage': 'fas fa-image',
+        'grp_shop.review': 'fas fa-star',
+        # Заявки и заказы
+        'grp_orders.lead': 'fas fa-inbox',
+        'grp_orders.order': 'fas fa-receipt',
+        'grp_orders.orderitem': 'fas fa-list-check',
+        # Служебное
+        'grp_system.profile': 'fas fa-id-badge',
+        'grp_system.user': 'fas fa-user',
+        'grp_system.group': 'fas fa-users',
+        'grp_system.session': 'fas fa-clock-rotate-left',
+        'grp_system.logentry': 'fas fa-clipboard-list',
+    },
+}
+
+JAZZMIN_UI_TWEAKS = {
+    'theme': 'flatly',
+    'dark_mode_theme': 'darkly',
+    'navbar': 'navbar-white navbar-light',
+    'sidebar': 'sidebar-dark-primary',
+    'sidebar_nav_flat_style': False,
+    'sidebar_fixed': True,
+    'navbar_fixed': True,
+    'footer_fixed': False,
+    'actions_sticky_top': True,
+    'accent': 'accent-primary',
+    'brand_colour': 'navbar-primary',
+    'body_small_text': False,
+    'sidebar_nav_small_text': False,
+}

@@ -140,7 +140,8 @@
                             <div class="form-check">
                                 {{ form.confirm_data }}
                                 <label class="form-check-label" for="{{ form.confirm_data.id_for_label }}">
-                                    {{ form.confirm_data.label }}
+                                    Подтверждаю корректность данных и даю
+                                    <a href="{% url 'index:privacy' %}" target="_blank" rel="noopener">согласие на обработку персональных данных</a>
                                 </label>
                                 {% if form.confirm_data.errors %}
                                 <div class="text-danger small">{{ form.confirm_data.errors }}</div>
@@ -195,9 +196,11 @@
             <div class="card mt-3">
                 <div class="card-body">
                     <h6>📞 Контакты</h6>
-                    <p class="small mb-1">По вопросам заказа обращайтесь:</p>
-                    <p class="small mb-1">📧 info@example.com</p>
-                    <p class="small mb-0">📱 +7 (999) 123-45-67</p>
+                    <p class="small mb-1">По вопросам заказа:</p>
+                    <p class="small mb-2">📧 <a href="mailto:{{ site_settings.email }}">{{ site_settings.email }}</a></p>
+                    {% for c in team_contacts %}
+                    <p class="small mb-0">📱 {{ c.phone }}{% if c.role_title %} <span class="text-muted">— {{ c.role_title }}</span>{% endif %}</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>

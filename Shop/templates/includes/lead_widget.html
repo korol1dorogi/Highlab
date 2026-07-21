@@ -23,7 +23,7 @@
                 <input class="hl-field" type="tel" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
                 <textarea class="hl-field" name="message" rows="2" placeholder="Коротко о задаче (необязательно)"></textarea>
                 <button type="submit" class="hl-btn">Жду звонка</button>
-                <p class="hl-consent">Нажимая кнопку, вы соглашаетесь на обработку персональных данных.</p>
+                <p class="hl-consent">Нажимая кнопку, вы соглашаетесь с <a href="{% url 'index:privacy' %}" target="_blank" rel="noopener">политикой конфиденциальности</a>.</p>
             </form>
         </div>
         <div class="hl-modal__body hl-modal__done" data-hl-state="done" hidden>

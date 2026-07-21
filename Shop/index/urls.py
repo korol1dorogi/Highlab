@@ -24,4 +24,5 @@ urlpatterns = [
     path('lead/', views.lead_create, name='lead_create'),
     path('quick-lead/', views.quick_lead, name='quick_lead'),
     path('lp/<uslug:slug>/', views.landing, name='landing'),
+    path('privacy/', views.privacy, name='privacy'),
 ]

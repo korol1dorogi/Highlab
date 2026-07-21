@@ -1,0 +1,45 @@
+{# Баннер согласия на cookie. Показывается один раз, ответ хранится в localStorage. #}
+<div class="cookie-consent" id="cookieConsent" hidden>
+    <p class="cookie-consent__text">
+        Мы используем файлы cookie и сервис Яндекс.Метрика для корректной работы сайта и статистики.
+        Продолжая пользоваться сайтом, вы соглашаетесь с
+        <a href="{% url 'index:privacy' %}">политикой конфиденциальности</a>.
+    </p>
+    <button type="button" class="cookie-consent__btn" id="cookieConsentBtn">Принять</button>
+</div>
+
+<style>
+.cookie-consent{
+    position:fixed;left:16px;right:16px;bottom:16px;z-index:1400;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;
+    max-width:920px;margin:0 auto;padding:14px 20px;
+    background:var(--color-ink,#141c26);color:#fff;border-radius:12px;
+    box-shadow:0 12px 34px rgba(0,0,0,.28)}
+.cookie-consent[hidden]{display:none}
+.cookie-consent__text{margin:0;font-size:.9rem;line-height:1.45;flex:1;min-width:220px}
+.cookie-consent__text a{color:#9dc3ff;text-decoration:underline}
+.cookie-consent__btn{
+    flex:none;padding:10px 22px;border:none;border-radius:9px;cursor:pointer;
+    background:var(--color-primary,#2b7de9);color:#fff;font:600 14px/1 inherit;transition:filter .15s ease}
+.cookie-consent__btn:hover{filter:brightness(1.08)}
+@media(max-width:520px){.cookie-consent{left:10px;right:10px;bottom:10px;padding:12px 14px}}
+</style>
+
+<script>
+(function () {
+    var KEY = 'hl_cookie_ok';
+    var el = document.getElementById('cookieConsent');
+    if (!el) return;
+    var accepted;
+    try { accepted = localStorage.getItem(KEY) === '1'; } catch (e) { accepted = false; }
+    if (accepted) return;
+    el.hidden = false;
+    var btn = document.getElementById('cookieConsentBtn');
+    if (btn) {
+        btn.addEventListener('click', function () {
+            try { localStorage.setItem(KEY, '1'); } catch (e) {}
+            el.hidden = true;
+        });
+    }
+})();
+</script>

@@ -88,3 +88,8 @@ def landing(request, slug):
     """Посадочная страница под контекстную рекламу (/lp/<slug>/)."""
     lp = get_object_or_404(Landing, slug=slug, is_active=True)
     return render(request, 'landing.html', {'landing': lp})
+
+
+def privacy(request):
+    """Политика конфиденциальности и согласие на обработку персональных данных."""
+    return render(request, 'privacy.html')

@@ -356,16 +356,7 @@
                     <span class="case-card__placeholder">{{ p.summary }}</span>
                 </a>
                 {% empty %}
-                <article class="case-card">
-                    <span class="case-card__tag">АСУ ТП</span>
-                    <strong>дополнить потом…</strong>
-                    <span class="case-card__placeholder">Кейс по автоматизации: задача, решение, оборудование, результат.</span>
-                </article>
-                <article class="case-card">
-                    <span class="case-card__tag">Разработка</span>
-                    <strong>дополнить потом…</strong>
-                    <span class="case-card__placeholder">Кейс по разработке ПО или сайта — что сделали и какой эффект.</span>
-                </article>
+                <p class="case-card__placeholder">Кейсы скоро появятся.</p>
                 {% endfor %}
             </div>
             <a href="{% url 'content:project_list' %}" class="btn btn--ghost">Смотреть все проекты →</a>
@@ -392,6 +383,7 @@
                     </label>
                     <div class="hp-wrap">{{ lead_form.website }}</div>
                     <button type="submit" class="btn btn--primary btn--lg">Отправить заявку</button>
+                    <p style="font-size: var(--fs-small); color: var(--color-muted); margin: 0;">Нажимая «Отправить», вы соглашаетесь с <a href="{% url 'index:privacy' %}" target="_blank" rel="noopener">политикой конфиденциальности</a>.</p>
                     <div class="form-feedback" id="lead-feedback" role="status"></div>
                 </form>
             </div>

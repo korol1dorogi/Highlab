@@ -28,6 +28,8 @@ def send_lead_notification(self, lead_id):
         f'👤 {lead.name}\n'
         f'📞 {lead.phone}\n'
     )
+    if getattr(lead, 'source', ''):
+        text += f'🎯 {lead.source}\n'
     if lead.message:
         text += f'\n💬 {lead.message}\n'
     text += f'\n⏰ {lead.created.strftime("%d.%m.%Y %H:%M")}'

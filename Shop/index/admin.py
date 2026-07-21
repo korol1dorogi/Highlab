@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (
-    SiteSettings, ServiceCard, CompanyStat, TeamContact, Advantage, Lead, Partner,
+    SiteSettings, ServiceCard, CompanyStat, TeamContact, Advantage, Lead, Partner, Landing,
 )
 
 
@@ -63,8 +63,23 @@ class AdvantageAdmin(admin.ModelAdmin):
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('name', 'phone', 'created', 'is_processed')
+    list_display = ('name', 'phone', 'source', 'created', 'is_processed')
     list_editable = ('is_processed',)
-    list_filter = ('is_processed', 'created')
-    search_fields = ('name', 'phone', 'message')
+    list_filter = ('is_processed', 'source', 'created')
+    search_fields = ('name', 'phone', 'message', 'source')
     readonly_fields = ('created',)
+
+
+@admin.register(Landing)
+class LandingAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug', 'quiz_type', 'is_active', 'updated')
+    list_editable = ('is_active',)
+    list_filter = ('is_active', 'quiz_type')
+    search_fields = ('title', 'h1', 'slug')
+    prepopulated_fields = {}
+    fieldsets = (
+        ('Основное', {'fields': ('title', 'slug', 'is_active')}),
+        ('Экран', {'fields': ('h1', 'subtitle', 'bullets', 'price_from', 'trust_note', 'phone')}),
+        ('Форма', {'fields': ('quiz_type', 'cta_text')}),
+        ('SEO', {'fields': ('seo_title', 'seo_description')}),
+    )

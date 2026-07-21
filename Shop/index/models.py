@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 
 
 class SingletonModel(models.Model):
@@ -229,6 +230,10 @@ class Lead(models.Model):
     name = models.CharField(max_length=120, verbose_name='Имя')
     phone = models.CharField(max_length=40, verbose_name='Телефон')
     message = models.TextField(blank=True, verbose_name='Сообщение')
+    source = models.CharField(
+        max_length=160, blank=True, verbose_name='Источник',
+        help_text='Откуда пришла заявка: обратный звонок, квиз, посадочная страница и т.п.'
+    )
     created = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     is_processed = models.BooleanField(default=False, verbose_name='Обработана')
 
@@ -239,3 +244,59 @@ class Lead(models.Model):
 
     def __str__(self):
         return f'Заявка от {self.name} ({self.phone})'
+
+
+class Landing(models.Model):
+    """Посадочная страница под контекстную рекламу (Яндекс.Директ).
+    Отдельный конверсионный URL /lp/<slug>/ с квизом/формой заявки."""
+    QUIZ_CHOICES = [
+        ('repair', 'Квиз по ремонту (устройство → проблема → срочность)'),
+        ('none', 'Без квиза — короткая форма заявки'),
+    ]
+
+    title = models.CharField(max_length=160, verbose_name='Название (внутреннее)')
+    slug = models.SlugField(max_length=180, unique=True, blank=True, allow_unicode=True,
+                            verbose_name='URL (slug)', help_text='Адрес будет /lp/<slug>/')
+    h1 = models.CharField(max_length=200, verbose_name='Заголовок H1',
+                          help_text='Главный заголовок, точно под запрос из рекламы')
+    subtitle = models.CharField(max_length=300, blank=True, verbose_name='Подзаголовок')
+    bullets = models.TextField(
+        blank=True, verbose_name='Преимущества (по одному на строку)',
+        help_text='Каждая строка — отдельный пункт списка «почему мы».'
+    )
+    price_from = models.CharField(max_length=80, blank=True, verbose_name='Цена от',
+                                  help_text='Например: «Диагностика — бесплатно» или «от 500 ₽».')
+    cta_text = models.CharField(max_length=80, default='Оставить заявку', verbose_name='Текст кнопки')
+    quiz_type = models.CharField(max_length=10, choices=QUIZ_CHOICES, default='repair',
+                                 verbose_name='Тип формы')
+    phone = models.CharField(max_length=40, blank=True, verbose_name='Телефон на странице',
+                             help_text='Если пусто — берётся из контактов сайта.')
+    trust_note = models.CharField(max_length=200, blank=True, verbose_name='Строка доверия',
+                                  help_text='Например: «Гарантия до 12 мес · Работаем с 2014 года».')
+    seo_title = models.CharField(max_length=200, blank=True, verbose_name='SEO title',
+                                 help_text='Если пусто — берётся H1.')
+    seo_description = models.CharField(max_length=300, blank=True, verbose_name='SEO description')
+    is_active = models.BooleanField(default=True, verbose_name='Опубликована')
+    created = models.DateTimeField(auto_now_add=True, verbose_name='Создана')
+    updated = models.DateTimeField(auto_now=True, verbose_name='Обновлена')
+
+    class Meta:
+        verbose_name = 'Посадочная страница'
+        verbose_name_plural = 'Посадочные страницы'
+        ordering = ['title']
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title, allow_unicode=True)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('index:landing', kwargs={'slug': self.slug})
+
+    @property
+    def bullet_list(self):
+        return [b.strip() for b in self.bullets.splitlines() if b.strip()]

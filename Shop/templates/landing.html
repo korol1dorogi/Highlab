@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ landing.seo_title|default:landing.h1 }}{% endblock %}
+{% block meta_description %}{{ landing.seo_description|default:landing.subtitle }}{% endblock %}
+{% block og_title %}{{ landing.h1 }}{% endblock %}
+{% block og_description %}{{ landing.subtitle|default:landing.h1 }}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "{{ landing.h1|escapejs }}",
+    "description": "{{ landing.subtitle|escapejs }}",
+    "areaServed": "Курск, Курская область",
+    "provider": {"@type": "LocalBusiness", "name": "{{ site_settings.company_name }}"}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="lp-hero">
+    <div class="container lp-hero__inner">
+        <div class="lp-hero__text">
+            <span class="lp-eyebrow">Лаборатория ВТ · Курск</span>
+            <h1 class="lp-h1">{{ landing.h1 }}</h1>
+            {% if landing.subtitle %}<p class="lp-lead">{{ landing.subtitle }}</p>{% endif %}
+
+            {% if landing.bullet_list %}
+            <ul class="lp-bullets">
+                {% for b in landing.bullet_list %}<li>{{ b }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+
+            <div class="lp-cta">
+                {% if landing.price_from %}<span class="lp-price">{{ landing.price_from }}</span>{% endif %}
+                <button type="button" data-hl-open data-hl-source="Посадочная: {{ landing.title }}" class="lp-btn">{{ landing.cta_text }}</button>
+            </div>
+            {% if landing.phone %}<a class="lp-phone" href="tel:{{ landing.phone|cut:' '|cut:'('|cut:')'|cut:'-' }}">{{ landing.phone }}</a>{% endif %}
+            {% if landing.trust_note %}<p class="lp-trust">{{ landing.trust_note }}</p>{% endif %}
+        </div>
+
+        <div class="lp-hero__form">
+            {% if landing.quiz_type == 'repair' %}
+                {% with qs='Посадочная: '|add:landing.title %}
+                {% include 'includes/service_quiz.html' with quiz_source=qs quiz_title='Рассчитать стоимость за 30 секунд' %}
+                {% endwith %}
+            {% else %}
+            <div class="lp-brief">
+                <h3 class="lp-brief__title">Оставьте заявку</h3>
+                <p class="lp-brief__sub">Перезвоним, обсудим задачу и назовём стоимость. Без навязчивых звонков.</p>
+                <button type="button" data-hl-open data-hl-source="Посадочная: {{ landing.title }}" class="lp-btn lp-btn--block">{{ landing.cta_text }}</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.lp-hero{padding:48px 0 64px}
+.lp-hero__inner{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:start}
+.lp-eyebrow{display:inline-block;font-family:var(--font-mono,monospace);font-size:.8rem;letter-spacing:.04em;
+    color:var(--color-primary,#2b7de9);text-transform:uppercase;margin-bottom:14px}
+.lp-h1{font-size:2.4rem;line-height:1.12;margin:0 0 16px;color:var(--color-ink,#141c26)}
+.lp-lead{font-size:1.15rem;color:var(--color-muted,#5a6472);margin:0 0 24px;line-height:1.5}
+.lp-bullets{list-style:none;padding:0;margin:0 0 28px;display:flex;flex-direction:column;gap:12px}
+.lp-bullets li{position:relative;padding-left:32px;color:var(--color-ink,#141c26);line-height:1.4}
+.lp-bullets li::before{content:'✓';position:absolute;left:0;top:-1px;width:22px;height:22px;border-radius:50%;
+    background:rgba(46,182,125,.15);color:#22a06b;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.lp-cta{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:14px}
+.lp-price{font-family:var(--font-mono,monospace);font-weight:700;font-size:1.3rem;color:var(--color-ink,#141c26)}
+.lp-btn{display:inline-block;padding:15px 30px;border:none;border-radius:12px;cursor:pointer;
+    background:var(--color-primary,#2b7de9);color:#fff;font:600 16px/1 inherit;
+    box-shadow:0 8px 22px rgba(43,125,233,.3);transition:transform .16s ease,box-shadow .16s ease}
+.lp-btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(43,125,233,.4)}
+.lp-btn--block{width:100%;text-align:center;margin-top:8px}
+.lp-phone{display:inline-block;font-size:1.25rem;font-weight:700;color:var(--color-ink,#141c26);text-decoration:none;margin-bottom:10px}
+.lp-phone:hover{color:var(--color-primary,#2b7de9)}
+.lp-trust{color:var(--color-muted,#8a94a6);font-size:.9rem;margin:6px 0 0}
+.lp-brief{background:var(--color-surface,#fff);border:1px solid var(--color-border,#e6e9ef);
+    border-radius:var(--radius-md,14px);padding:26px 24px;box-shadow:var(--shadow-md,0 8px 24px rgba(0,0,0,.06))}
+.lp-brief__title{margin:0 0 8px;font-size:1.3rem}
+.lp-brief__sub{margin:0 0 18px;color:var(--color-muted,#8a94a6)}
+@media(max-width:820px){
+    .lp-hero__inner{grid-template-columns:1fr;gap:32px}
+    .lp-h1{font-size:1.9rem}
+}
+</style>
+{% endblock %}

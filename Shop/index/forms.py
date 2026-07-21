@@ -49,3 +49,28 @@ class LeadForm(forms.ModelForm):
         if not self.request or not check_captcha(self.request.session, val, key=LEAD_CAPTCHA_KEY):
             raise forms.ValidationError('Неверный ответ на проверочный вопрос.')
         return val
+
+
+class QuickLeadForm(forms.ModelForm):
+    """Быстрая заявка из виджета обратного звонка / квиза / посадочной страницы.
+
+    Без видимой капчи — на конверсионных формах капча убивает заявки.
+    Защита от ботов: honeypot-поле + проверка «слишком быстрого» сабмита во вьюхе.
+    """
+    website = forms.CharField(required=False)  # honeypot
+
+    class Meta:
+        model = Lead
+        fields = ['name', 'phone', 'message', 'source']
+
+    def clean_website(self):
+        if self.cleaned_data.get('website'):
+            raise forms.ValidationError('spam')
+        return ''
+
+    def clean_phone(self):
+        phone = (self.cleaned_data.get('phone') or '').strip()
+        digits = ''.join(ch for ch in phone if ch.isdigit())
+        if len(digits) < 5:
+            raise forms.ValidationError('Укажите корректный номер телефона.')
+        return phone

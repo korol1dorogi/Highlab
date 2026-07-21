@@ -1,0 +1,162 @@
+{# Квиз-заявка «что с устройством?». Параметры при include: #}
+{#   quiz_source — что писать в источник заявки; quiz_title — заголовок. #}
+<div class="hl-quiz" data-source="{{ quiz_source|default:'Квиз на сайте' }}">
+    <div class="hl-quiz__head">
+        <h3 class="hl-quiz__title">{{ quiz_title|default:'Рассчитать ремонт за 30 секунд' }}</h3>
+        <div class="hl-quiz__progress"><span class="hl-quiz__bar"></span></div>
+    </div>
+
+    <div class="hl-quiz__step" data-step="1" data-key="device">
+        <p class="hl-quiz__q">Что за устройство?</p>
+        <div class="hl-quiz__opts">
+            <button type="button" class="hl-quiz__opt">Ноутбук</button>
+            <button type="button" class="hl-quiz__opt">Компьютер</button>
+            <button type="button" class="hl-quiz__opt">Моноблок</button>
+            <button type="button" class="hl-quiz__opt">Телефон / планшет</button>
+            <button type="button" class="hl-quiz__opt">Другое</button>
+        </div>
+    </div>
+
+    <div class="hl-quiz__step" data-step="2" data-key="problem" hidden>
+        <p class="hl-quiz__q">Что случилось?</p>
+        <div class="hl-quiz__opts">
+            <button type="button" class="hl-quiz__opt">Не включается</button>
+            <button type="button" class="hl-quiz__opt">Залили жидкостью</button>
+            <button type="button" class="hl-quiz__opt">Разбит экран</button>
+            <button type="button" class="hl-quiz__opt">Тормозит, греется, шумит</button>
+            <button type="button" class="hl-quiz__opt">Нужно восстановить данные</button>
+            <button type="button" class="hl-quiz__opt">Вирусы / не грузится система</button>
+            <button type="button" class="hl-quiz__opt">Другое</button>
+        </div>
+    </div>
+
+    <div class="hl-quiz__step" data-step="3" data-key="urgency" hidden>
+        <p class="hl-quiz__q">Насколько срочно?</p>
+        <div class="hl-quiz__opts">
+            <button type="button" class="hl-quiz__opt">Срочно, сегодня</button>
+            <button type="button" class="hl-quiz__opt">В течение недели</button>
+            <button type="button" class="hl-quiz__opt">Просто оценить стоимость</button>
+        </div>
+    </div>
+
+    <div class="hl-quiz__step" data-step="4" hidden>
+        <p class="hl-quiz__q">Куда сообщить результат и цену?</p>
+        <form class="hl-quiz__form">
+            <input type="text" name="website" class="hl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <input class="hl-field" type="text" name="name" placeholder="Ваше имя" autocomplete="name">
+            <input class="hl-field" type="tel" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
+            <button type="submit" class="hl-btn">Узнать стоимость</button>
+            <p class="hl-consent">Перезвоним, уточним детали и назовём цену. Согласие на обработку данных.</p>
+        </form>
+    </div>
+
+    <div class="hl-quiz__done" hidden>
+        <div class="hl-done-icon">✓</div>
+        <p class="hl-quiz__q">Заявка принята — перезвоним и назовём стоимость.</p>
+    </div>
+
+    <button type="button" class="hl-quiz__back" hidden>← Назад</button>
+</div>
+
+<style>
+.hl-quiz{background:var(--color-surface,#fff);border:1px solid var(--color-border,#e6e9ef);
+    border-radius:var(--radius-md,14px);padding:22px 22px 18px;box-shadow:var(--shadow-md,0 8px 24px rgba(0,0,0,.06))}
+.hl-quiz__head{margin-bottom:16px}
+.hl-quiz__title{margin:0 0 12px;font-size:1.2rem;color:var(--color-ink,#141c26)}
+.hl-quiz__progress{height:5px;border-radius:3px;background:var(--color-border,#e6e9ef);overflow:hidden}
+.hl-quiz__bar{display:block;height:100%;width:25%;background:var(--color-primary,#2b7de9);transition:width .3s ease}
+.hl-quiz__q{margin:0 0 12px;font-weight:600;color:var(--color-ink,#141c26)}
+.hl-quiz__opts{display:flex;flex-direction:column;gap:8px}
+.hl-quiz__opt{text-align:left;padding:13px 15px;border:1px solid var(--color-border,#e6e9ef);border-radius:10px;
+    background:var(--color-bg,#fff);color:var(--color-ink,#141c26);font:500 15px/1.2 inherit;cursor:pointer;
+    transition:border-color .15s ease,background .15s ease,transform .1s ease}
+.hl-quiz__opt:hover{border-color:var(--color-primary,#2b7de9);background:rgba(43,125,233,.05)}
+.hl-quiz__opt:active{transform:scale(.99)}
+.hl-quiz__form{display:flex;flex-direction:column;gap:10px}
+.hl-quiz__back{margin-top:12px;border:none;background:none;color:var(--color-muted,#8a94a6);cursor:pointer;font-size:.9rem;padding:4px}
+.hl-quiz__back:hover{color:var(--color-primary,#2b7de9)}
+.hl-quiz__done{text-align:center;padding:14px 0}
+.hl-quiz .hl-err{color:#d33;font-size:.85rem;margin:0}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.hl-quiz').forEach(function (quiz) {
+        var source = quiz.getAttribute('data-source') || 'Квиз на сайте';
+        var steps = Array.prototype.slice.call(quiz.querySelectorAll('.hl-quiz__step'));
+        var doneEl = quiz.querySelector('.hl-quiz__done');
+        var backBtn = quiz.querySelector('.hl-quiz__back');
+        var bar = quiz.querySelector('.hl-quiz__bar');
+        var form = quiz.querySelector('.hl-quiz__form');
+        var total = steps.length;
+        var current = 0;
+        var answers = {};
+
+        function show(i) {
+            current = i;
+            steps.forEach(function (s, idx) { s.hidden = idx !== i; });
+            doneEl.hidden = true;
+            backBtn.hidden = i === 0;
+            bar.style.width = Math.round((i + 1) / total * 100) + '%';
+        }
+
+        steps.forEach(function (step) {
+            var key = step.getAttribute('data-key');
+            step.querySelectorAll('.hl-quiz__opt').forEach(function (opt) {
+                opt.addEventListener('click', function () {
+                    if (key) { answers[key] = opt.textContent.trim(); }
+                    if (current < total - 1) { show(current + 1); }
+                });
+            });
+        });
+
+        backBtn.addEventListener('click', function () { if (current > 0) { show(current - 1); } });
+
+        if (form) {
+            form.addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                var old = form.querySelector('.hl-err'); if (old) old.remove();
+                var btn = form.querySelector('button[type=submit]');
+                var fv = function (n) { var el = form.elements[n]; return el ? el.value.trim() : ''; };
+                var phone = fv('phone');
+                if (phone.replace(/\D/g, '').length < 5) {
+                    var er = document.createElement('p'); er.className = 'hl-err'; er.textContent = 'Укажите телефон.';
+                    form.insertBefore(er, btn); return;
+                }
+                var parts = [];
+                if (answers.device) parts.push('Устройство: ' + answers.device);
+                if (answers.problem) parts.push('Проблема: ' + answers.problem);
+                if (answers.urgency) parts.push('Срочность: ' + answers.urgency);
+                var payload = {
+                    name: fv('name'),
+                    phone: phone,
+                    message: parts.join(' · '),
+                    source: source,
+                    website: form.elements['website'] ? form.elements['website'].value : ''
+                };
+                if (!window.HLLead) { return; }
+                btn.disabled = true; btn.textContent = 'Отправляем…';
+                window.HLLead.submit(payload).then(function (res) {
+                    if (res.ok && res.data.success) {
+                        steps.forEach(function (s) { s.hidden = true; });
+                        backBtn.hidden = true; bar.style.width = '100%';
+                        doneEl.hidden = false;
+                    } else {
+                        var er = document.createElement('p'); er.className = 'hl-err';
+                        er.textContent = (res.data && res.data.message) || 'Не удалось отправить.';
+                        form.insertBefore(er, btn);
+                    }
+                }).catch(function () {
+                    var er = document.createElement('p'); er.className = 'hl-err';
+                    er.textContent = 'Сеть недоступна. Позвоните нам напрямую.';
+                    form.insertBefore(er, btn);
+                }).finally(function () {
+                    btn.disabled = false; btn.textContent = 'Узнать стоимость';
+                });
+            });
+        }
+
+        show(0);
+    });
+});
+</script>

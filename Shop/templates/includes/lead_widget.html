@@ -1,0 +1,184 @@
+{# Виджет обратного звонка: плавающая кнопка + модалка. #}
+{# Общий JS-API window.HLLead используется и квизом, и посадочными страницами. #}
+<button type="button" class="hl-fab" data-hl-open data-hl-source="Обратный звонок (плавающая кнопка)"
+        aria-label="Заказать обратный звонок">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92z"/>
+    </svg>
+    <span class="hl-fab__label">Обратный звонок</span>
+</button>
+
+<div class="hl-modal" id="hlModal" hidden>
+    <div class="hl-modal__overlay" data-hl-close></div>
+    <div class="hl-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="hlModalTitle">
+        <button type="button" class="hl-modal__close" data-hl-close aria-label="Закрыть">&times;</button>
+        <div class="hl-modal__body" data-hl-state="form">
+            <h3 class="hl-modal__title" id="hlModalTitle">Перезвоним за 5 минут</h3>
+            <p class="hl-modal__sub">Оставьте телефон — мастер свяжется, уточнит задачу и назовёт цену.</p>
+            <form class="hl-form" id="hlModalForm" novalidate>
+                <input type="text" name="website" class="hl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <input type="hidden" name="source" value="Обратный звонок">
+                <input class="hl-field" type="text" name="name" placeholder="Ваше имя" autocomplete="name">
+                <input class="hl-field" type="tel" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
+                <textarea class="hl-field" name="message" rows="2" placeholder="Коротко о задаче (необязательно)"></textarea>
+                <button type="submit" class="hl-btn">Жду звонка</button>
+                <p class="hl-consent">Нажимая кнопку, вы соглашаетесь на обработку персональных данных.</p>
+            </form>
+        </div>
+        <div class="hl-modal__body hl-modal__done" data-hl-state="done" hidden>
+            <div class="hl-done-icon">✓</div>
+            <h3 class="hl-modal__title">Заявка принята</h3>
+            <p class="hl-modal__sub" data-hl-done-msg>Перезвоним в ближайшее время.</p>
+            <button type="button" class="hl-btn hl-btn--ghost" data-hl-close>Закрыть</button>
+        </div>
+    </div>
+</div>
+
+{% csrf_token %}
+
+<style>
+.hl-fab{position:fixed;right:20px;bottom:20px;z-index:1200;display:inline-flex;align-items:center;gap:10px;
+    padding:12px 18px;border:none;border-radius:999px;cursor:pointer;
+    background:var(--color-primary,#2b7de9);color:#fff;font:600 15px/1 var(--font-body,inherit);
+    box-shadow:0 8px 24px rgba(43,125,233,.35);transition:transform .18s ease,box-shadow .18s ease}
+.hl-fab:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(43,125,233,.45)}
+.hl-fab svg{flex:none}
+.hl-fab__label{white-space:nowrap}
+@media(max-width:520px){.hl-fab{right:14px;bottom:14px;padding:14px}.hl-fab__label{display:none}}
+
+.hl-modal{position:fixed;inset:0;z-index:1300;display:flex;align-items:center;justify-content:center;padding:16px}
+.hl-modal[hidden]{display:none}
+.hl-modal__overlay{position:absolute;inset:0;background:rgba(12,18,28,.6);backdrop-filter:blur(2px)}
+.hl-modal__dialog{position:relative;width:100%;max-width:420px;
+    background:var(--color-surface,#fff);color:var(--color-ink,#141c26);
+    border:1px solid var(--color-border,#e6e9ef);border-radius:var(--radius-md,14px);
+    box-shadow:0 24px 60px rgba(0,0,0,.3);padding:28px 26px;animation:hl-pop .2s ease}
+@keyframes hl-pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.hl-modal__close{position:absolute;top:10px;right:14px;border:none;background:none;font-size:28px;line-height:1;
+    color:var(--color-muted,#8a94a6);cursor:pointer}
+.hl-modal__title{margin:0 0 6px;font-size:1.35rem}
+.hl-modal__sub{margin:0 0 16px;color:var(--color-muted,#8a94a6);font-size:.95rem}
+.hl-form{display:flex;flex-direction:column;gap:10px}
+.hl-hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0}
+.hl-field{width:100%;padding:12px 14px;border:1px solid var(--color-border,#e6e9ef);border-radius:10px;
+    background:var(--color-bg,#fff);color:var(--color-ink,#141c26);font-size:15px;font-family:inherit}
+.hl-field:focus{outline:none;border-color:var(--color-primary,#2b7de9);box-shadow:0 0 0 3px rgba(43,125,233,.15)}
+.hl-btn{margin-top:4px;padding:13px 18px;border:none;border-radius:10px;cursor:pointer;
+    background:var(--color-primary,#2b7de9);color:#fff;font:600 15px/1 inherit;transition:filter .15s ease}
+.hl-btn:hover{filter:brightness(1.06)}
+.hl-btn:disabled{opacity:.6;cursor:default}
+.hl-btn--ghost{background:transparent;color:var(--color-primary,#2b7de9);border:1px solid var(--color-border,#e6e9ef)}
+.hl-consent{margin:2px 0 0;font-size:.72rem;color:var(--color-muted,#8a94a6);line-height:1.4}
+.hl-modal__done{text-align:center}
+.hl-done-icon{width:56px;height:56px;margin:4px auto 10px;border-radius:50%;background:rgba(46,182,125,.15);
+    color:#22a06b;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700}
+.hl-err{color:#d33;font-size:.85rem;margin:0}
+</style>
+
+<script>
+(function () {
+    var URL_QUICK = "{% url 'index:quick_lead' %}";
+    var tokenEl = document.querySelector('input[name=csrfmiddlewaretoken]');
+    var TOKEN = tokenEl ? tokenEl.value : '';
+    var startedAt = Date.now();
+
+    function post(data) {
+        var body = new FormData();
+        Object.keys(data).forEach(function (k) { body.append(k, data[k] == null ? '' : data[k]); });
+        body.append('csrfmiddlewaretoken', TOKEN);
+        body.append('elapsed', String(Date.now() - startedAt));
+        return fetch(URL_QUICK, {
+            method: 'POST', body: body, credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, data: j }; }); });
+    }
+
+    function fireGoal(source) {
+        try {
+            if (window.ym && window.YM_COUNTER_ID) {
+                ym(window.YM_COUNTER_ID, 'reachGoal', 'lead', { source: source || '' });
+            }
+        } catch (e) {}
+    }
+
+    // Публичный API — используется квизом и посадочными страницами.
+    window.HLLead = {
+        submit: function (payload) {
+            return post(payload).then(function (res) {
+                if (res.ok && res.data && res.data.success) { fireGoal(payload.source); }
+                return res;
+            });
+        },
+        open: openModal
+    };
+
+    // --- Модалка обратного звонка ---
+    var modal = document.getElementById('hlModal');
+    if (!modal) return;
+    var form = document.getElementById('hlModalForm');
+    var sourceInput = form.querySelector('input[name=source]');
+    var bodyForm = modal.querySelector('[data-hl-state=form]');
+    var bodyDone = modal.querySelector('[data-hl-state=done]');
+    var doneMsg = modal.querySelector('[data-hl-done-msg]');
+
+    function openModal(source) {
+        if (source) { sourceInput.value = source; }
+        bodyForm.hidden = false; bodyDone.hidden = true;
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        var phone = form.querySelector('input[name=phone]');
+        setTimeout(function () { phone && phone.focus(); }, 50);
+    }
+    function closeModal() {
+        modal.hidden = true;
+        document.body.style.overflow = '';
+        form.reset();
+        var e = form.querySelector('.hl-err'); if (e) e.remove();
+    }
+
+    document.addEventListener('click', function (ev) {
+        var opener = ev.target.closest('[data-hl-open]');
+        if (opener) { ev.preventDefault(); openModal(opener.getAttribute('data-hl-source')); return; }
+        if (ev.target.closest('[data-hl-close]')) { closeModal(); }
+    });
+    document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && !modal.hidden) { closeModal(); }
+    });
+
+    form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var old = form.querySelector('.hl-err'); if (old) old.remove();
+        var btn = form.querySelector('button[type=submit]');
+        var fv = function (n) { var el = form.elements[n]; return el ? el.value.trim() : ''; };
+        var data = {
+            name: fv('name'),
+            phone: fv('phone'),
+            message: fv('message'),
+            source: sourceInput.value,
+            website: form.elements['website'] ? form.elements['website'].value : ''
+        };
+        if (data.phone.replace(/\D/g, '').length < 5) {
+            var er = document.createElement('p'); er.className = 'hl-err'; er.textContent = 'Укажите телефон для связи.';
+            form.insertBefore(er, btn); return;
+        }
+        btn.disabled = true; btn.textContent = 'Отправляем…';
+        window.HLLead.submit(data).then(function (res) {
+            if (res.ok && res.data.success) {
+                if (doneMsg && res.data.message) { doneMsg.textContent = res.data.message; }
+                bodyForm.hidden = true; bodyDone.hidden = false;
+            } else {
+                var er = document.createElement('p'); er.className = 'hl-err';
+                er.textContent = (res.data && res.data.message) || 'Не удалось отправить. Позвоните нам напрямую.';
+                form.insertBefore(er, btn);
+            }
+        }).catch(function () {
+            var er = document.createElement('p'); er.className = 'hl-err';
+            er.textContent = 'Сеть недоступна. Попробуйте позвонить нам напрямую.';
+            form.insertBefore(er, btn);
+        }).finally(function () {
+            btn.disabled = false; btn.textContent = 'Жду звонка';
+        });
+    });
+})();
+</script>

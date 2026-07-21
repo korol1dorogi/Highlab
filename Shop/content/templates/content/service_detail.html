@@ -49,6 +49,14 @@
                         {% endif %}
                     </div>
 
+                    {% if service.direction == 'repair' %}
+                    <div style="margin-top: var(--space-10);">
+                        {% with qs='Квиз: '|add:service.title %}
+                        {% include 'includes/service_quiz.html' with quiz_source=qs quiz_title='Рассчитать стоимость ремонта' %}
+                        {% endwith %}
+                    </div>
+                    {% endif %}
+
                     {% if related_projects %}
                     <div style="margin-top: var(--space-12);">
                         <div class="sec-head">
@@ -88,7 +96,7 @@
                         </div>
                     </div>
 
-                    <a href="/#lead" class="btn btn--primary" style="width: 100%; margin-top: var(--space-6);">Обсудить задачу</a>
+                    <button type="button" data-hl-open data-hl-source="Услуга: {{ service.title }}" class="btn btn--primary" style="width: 100%; margin-top: var(--space-6);">Обсудить задачу</button>
                     <a href="/shop_electronic/" class="btn btn--ghost btn--sm" style="width: 100%; margin-top: var(--space-3);">В магазин</a>
 
                     {% if other_services %}

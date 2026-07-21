@@ -265,7 +265,7 @@
                 <span class="scroll-cue__chevron">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </span>
-                листайте вниз — направления, проекты, заявка
+                листайте вниз — направления, о нас, партнёры, проекты
             </a>
         </div>
     </section>
@@ -299,11 +299,53 @@
         </div>
     </section>
 
-    <!-- 02 ПРОЕКТЫ / ЭКСПЕРТИЗА (полноценный раздел /projects/ — Фаза 2) -->
-    <section class="section cases reveal-on-scroll" id="projects" data-rail="Проекты">
+    <!-- 02 О КОМПАНИИ -->
+    <section class="section reveal-on-scroll" id="about" data-rail="О компании">
         <div class="container">
             <div class="sec-head">
                 <span class="sec-head__idx">02</span>
+                <h2 class="sec-head__title">{{ site_settings.about_title }}</h2>
+            </div>
+            <p class="about-text">{{ site_settings.about_text }}</p>
+            {% if advantages %}
+            <ul class="advantages-list">
+                {% for advantage in advantages %}
+                <li>{{ advantage.text }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- 03 ПАРТНЁРЫ / АВТОРИЗОВАННЫЕ ИНТЕГРАТОРЫ -->
+    {% if partners %}
+    <section class="section reveal-on-scroll" id="partners" data-rail="Партнёры">
+        <div class="container">
+            <div class="sec-head">
+                <span class="sec-head__idx">03</span>
+                <h2 class="sec-head__title">Мы являемся авторизованными интеграторами:</h2>
+            </div>
+            <div class="partners-grid">
+                {% for p in partners %}
+                {% if p.url %}<a class="partner-card" href="{{ p.url }}" target="_blank" rel="noopener">{% else %}<div class="partner-card">{% endif %}
+                    <div class="partner-card__logo">
+                        {% if p.logo %}<img src="{{ p.logo.url }}" alt="{{ p.name }}" loading="lazy">{% else %}<span class="partner-card__logo-text">{{ p.name }}</span>{% endif %}
+                    </div>
+                    <div class="partner-card__name">{{ p.name }}</div>
+                    {% if p.description %}<p class="partner-card__desc">{{ p.description }}</p>{% endif %}
+                    {% if p.url %}<span class="partner-card__more">На сайт бренда →</span>{% endif %}
+                {% if p.url %}</a>{% else %}</div>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 04 РЕАЛИЗОВАННЫЕ ПРОЕКТЫ (в самом конце, перед заявкой) -->
+    <section class="section cases reveal-on-scroll" id="projects" data-rail="Проекты">
+        <div class="container">
+            <div class="sec-head">
+                <span class="sec-head__idx">04</span>
                 <h2 class="sec-head__title">Реализованные проекты</h2>
             </div>
             <div class="cases__grid">
@@ -330,48 +372,12 @@
         </div>
     </section>
 
-    <!-- 03 О КОМПАНИИ -->
-    <section class="section reveal-on-scroll" id="about" data-rail="О компании">
-        <div class="container">
-            <div class="sec-head">
-                <span class="sec-head__idx">03</span>
-                <h2 class="sec-head__title">{{ site_settings.about_title }}</h2>
-            </div>
-            <p class="about-text">{{ site_settings.about_text }}</p>
-            {% if advantages %}
-            <ul class="advantages-list">
-                {% for advantage in advantages %}
-                <li>{{ advantage.text }}</li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-
-            {% if partners %}
-            <div class="partners-block">
-                <h3 class="partners-block__title">Партнёры и бренды, с которыми работаем</h3>
-                <div class="partners-grid">
-                    {% for p in partners %}
-                    {% if p.url %}<a class="partner-card" href="{{ p.url }}" target="_blank" rel="noopener">{% else %}<div class="partner-card">{% endif %}
-                        <div class="partner-card__logo">
-                            {% if p.logo %}<img src="{{ p.logo.url }}" alt="{{ p.name }}" loading="lazy">{% else %}<span class="partner-card__logo-text">{{ p.name }}</span>{% endif %}
-                        </div>
-                        <div class="partner-card__name">{{ p.name }}</div>
-                        {% if p.description %}<p class="partner-card__desc">{{ p.description }}</p>{% endif %}
-                        {% if p.url %}<span class="partner-card__more">На сайт бренда →</span>{% endif %}
-                    {% if p.url %}</a>{% else %}</div>{% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </section>
-
     <!-- 04 ЗАЯВКА -->
     <section class="section lead reveal-on-scroll" id="lead" data-rail="Заявка">
         <div class="container">
             <div class="lead__inner">
                 <div class="lead__text">
-                    <span class="hero__eyebrow">// 04 — заявка</span>
+                    <span class="hero__eyebrow">// 05 — заявка</span>
                     <h2>{{ site_settings.lead_title }}</h2>
                     <p>{{ site_settings.lead_subtitle }}</p>
                 </div>

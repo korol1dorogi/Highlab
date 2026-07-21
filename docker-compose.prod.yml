@@ -36,6 +36,10 @@ services:
              --access-logfile - --error-logfile -"
     env_file:
       - .env
+    extra_hosts:
+      # api.telegram.org резолвится только в IPv6, а IPv6-маршрута у сервера нет —
+      # форсируем рабочий IPv4 Telegram, иначе уведомления о заявках не уходят.
+      - "api.telegram.org:149.154.167.220"
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
@@ -54,6 +58,9 @@ services:
     command: celery -A Shop worker -l info --concurrency 2
     env_file:
       - .env
+    extra_hosts:
+      # см. комментарий выше в web: форсируем IPv4 Telegram для отправки уведомлений.
+      - "api.telegram.org:149.154.167.220"
     volumes:
       - media_volume:/app/media
     depends_on:

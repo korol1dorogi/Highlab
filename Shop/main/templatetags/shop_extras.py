@@ -1,12 +1,66 @@
 """Шаблонные теги магазина: генерация лёгких WebP-превью на лету (Pillow).
 Превью кэшируется в media/cache/thumbs/ и переиспользуется."""
 import os
+import re
 import hashlib
 
 from django import template
 from django.conf import settings
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 
 register = template.Library()
+
+# «Ключ: значение» — короткий ключ без точки, разумной длины значение.
+_KV_RE = re.compile(r'^([^:.]{2,40}):\s+(.{1,160})$')
+
+
+def _is_heading(line):
+    """Похожа ли строка на подзаголовок: короткая, без завершающей пунктуации."""
+    if len(line) > 80 or line.endswith(('.', '!', '?', ';', ',', ':')):
+        return False
+    if re.match(r'^\d+\.\s+\S', line):   # нумерованные разделы: «1. Аппаратная платформа»
+        return True
+    return bool(re.match(r'^[А-ЯЁA-Z]', line))
+
+
+@register.filter
+def format_description(text):
+    """Структурирует плоское описание товара от поставщика.
+
+    Строки «Ключ: значение» группируются в блок характеристик, короткие строки
+    без точки становятся подзаголовками, остальное — абзацы. Всё экранируется.
+    """
+    if not text:
+        return ''
+    out = []
+    specs = []
+
+    def flush_specs():
+        if specs:
+            rows = ''.join(
+                f'<div class="dspec__row"><span class="dspec__k">{k}</span>'
+                f'<span class="dspec__v">{v}</span></div>'
+                for k, v in specs
+            )
+            out.append(f'<div class="dspec">{rows}</div>')
+            specs.clear()
+
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        m = _KV_RE.match(line)
+        if m:
+            specs.append((escape(m.group(1).strip()), escape(m.group(2).strip())))
+            continue
+        flush_specs()
+        if _is_heading(line):
+            out.append(f'<h6 class="desc-sub">{escape(line)}</h6>')
+        else:
+            out.append(f'<p>{escape(line)}</p>')
+    flush_specs()
+    return mark_safe('\n'.join(out))
 
 
 @register.filter

@@ -529,3 +529,31 @@ body {
     .product-detail-image { max-height: 50vh; }
     .product-detail-image-container { min-height: 200px; }
 }
+
+/* ---------- Структурированное описание товара ---------- */
+.desc-sub {
+    margin: 1.15rem 0 0.5rem; font-weight: 700; font-size: 1rem;
+    color: var(--color-ink);
+}
+.dspec {
+    border: 1px solid var(--color-border); border-radius: 10px;
+    margin: 0.75rem 0 1rem; padding: 4px 0; background: var(--color-surface);
+    overflow: hidden;
+}
+.dspec__row { display: flex; gap: 12px; padding: 7px 14px; font-size: 0.95rem; }
+.dspec__row:nth-child(odd) { background: rgba(43, 125, 233, 0.04); }
+.dspec__k { flex: 0 0 44%; color: var(--color-muted); }
+.dspec__v { flex: 1; color: var(--color-ink); }
+@media (max-width: 520px) {
+    .dspec__row { flex-direction: column; gap: 2px; }
+    .dspec__k { flex-basis: auto; font-size: 0.85rem; }
+}
+
+/* Ключевые характеристики — чипы под названием товара */
+.qfacts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0.25rem 0 1rem; }
+.qfact {
+    font-size: 0.8rem; color: var(--color-muted);
+    border: 1px solid var(--color-border); border-radius: 999px;
+    padding: 4px 12px; background: var(--color-surface);
+}
+.qfact b { color: var(--color-ink); font-weight: 600; }

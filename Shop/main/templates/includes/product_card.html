@@ -4,10 +4,10 @@
     <a class="pcard__media" href="{% url 'shop:product_detail' product.slug %}">
         {% if product.has_discount %}<span class="pcard__badge">−{{ product.discount_percent|floatformat:0 }}%</span>{% endif %}
         {% if product.main_image %}
-        <img class="pcard__img lazy-image"
-             data-src="{% thumb product.main_image 400 %}"
-             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E"
-             alt="{{ product.name }}" loading="lazy">
+        {# Нативный loading="lazy" вместo JS data-src: картинки видны и в Вебвизоре/без JS #}
+        <img class="pcard__img"
+             src="{% thumb product.main_image 400 %}"
+             alt="{{ product.name }}" loading="lazy" decoding="async">
         {% else %}
         <div class="pcard__noimg">нет фото</div>
         {% endif %}

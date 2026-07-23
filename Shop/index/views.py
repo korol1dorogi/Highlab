@@ -38,7 +38,7 @@ def lead_create(request):
 
     if 'captcha' in form.errors:
         message = 'Неверный ответ на проверочный вопрос. Попробуйте ещё раз.'
-    elif 'website' in form.errors:
+    elif 'lead_check' in form.errors:
         message = 'Не удалось отправить.'
     else:
         message = 'Проверьте поля: имя и телефон обязательны.'
@@ -74,7 +74,7 @@ def quick_lead(request):
             'message': 'Спасибо! Заявка принята — перезвоним в ближайшее время.',
         })
 
-    if 'website' in form.errors:
+    if 'lead_check' in form.errors:
         # honeypot сработал — отвечаем «успехом», чтобы бот не подбирал
         return JsonResponse({'success': True, 'message': 'Спасибо! Заявка принята.'})
     return JsonResponse({

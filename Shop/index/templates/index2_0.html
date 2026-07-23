@@ -381,7 +381,7 @@
                         <span>Сколько будет <b id="lead-captcha-q">{{ lead_captcha_question }}</b>?</span>
                         {{ lead_form.captcha }}
                     </label>
-                    <div class="hp-wrap">{{ lead_form.website }}</div>
+                    <div class="hp-wrap">{{ lead_form.lead_check }}</div>
                     <button type="submit" class="btn btn--primary btn--lg">Отправить заявку</button>
                     <p style="font-size: var(--fs-small); color: var(--color-muted); margin: 0;">Нажимая «Отправить», вы соглашаетесь с <a href="{% url 'index:privacy' %}" target="_blank" rel="noopener">политикой конфиденциальности</a>.</p>
                     <div class="form-feedback" id="lead-feedback" role="status"></div>

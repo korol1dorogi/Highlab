@@ -9,7 +9,9 @@ LEAD_CAPTCHA_KEY = 'lead_captcha'
 class LeadForm(forms.ModelForm):
     """Форма заявки с лендинга (с капчей и honeypot-защитой от ботов)."""
 
-    website = forms.CharField(
+    # Honeypot. Имя поля нарочно бессмысленное: поля вроде "website" браузеры
+    # заполняют автозаполнением, и настоящая заявка молча отбрасывалась бы.
+    lead_check = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={'tabindex': '-1', 'autocomplete': 'off',
                                        'class': 'hp-field', 'aria-hidden': 'true'}),
@@ -39,8 +41,8 @@ class LeadForm(forms.ModelForm):
         self.request = request
         super().__init__(*args, **kwargs)
 
-    def clean_website(self):
-        if self.cleaned_data.get('website'):
+    def clean_lead_check(self):
+        if self.cleaned_data.get('lead_check'):
             raise forms.ValidationError('Обнаружен спам.')
         return ''
 
@@ -57,14 +59,14 @@ class QuickLeadForm(forms.ModelForm):
     Без видимой капчи — на конверсионных формах капча убивает заявки.
     Защита от ботов: honeypot-поле + проверка «слишком быстрого» сабмита во вьюхе.
     """
-    website = forms.CharField(required=False)  # honeypot
+    lead_check = forms.CharField(required=False)  # honeypot (см. комментарий в LeadForm)
 
     class Meta:
         model = Lead
         fields = ['name', 'phone', 'message', 'source']
 
-    def clean_website(self):
-        if self.cleaned_data.get('website'):
+    def clean_lead_check(self):
+        if self.cleaned_data.get('lead_check'):
             raise forms.ValidationError('spam')
         return ''
 

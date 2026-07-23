@@ -42,7 +42,7 @@
     <div class="hl-quiz__step" data-step="4" hidden>
         <p class="hl-quiz__q">Куда сообщить результат и цену?</p>
         <form class="hl-quiz__form">
-            <input type="text" name="website" class="hl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <input type="text" name="lead_check" class="hl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
             <input class="hl-field" type="text" name="name" placeholder="Ваше имя" autocomplete="name">
             <input class="hl-field" type="tel" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
             <button type="submit" class="hl-btn">Узнать стоимость</button>
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     phone: phone,
                     message: parts.join(' · '),
                     source: source,
-                    website: form.elements['website'] ? form.elements['website'].value : ''
+                    lead_check: form.elements['lead_check'] ? form.elements['lead_check'].value : ''
                 };
                 if (!window.HLLead) { return; }
                 btn.disabled = true; btn.textContent = 'Отправляем…';

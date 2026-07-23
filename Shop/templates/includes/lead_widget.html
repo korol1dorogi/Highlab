@@ -17,7 +17,7 @@
             <h3 class="hl-modal__title" id="hlModalTitle">Перезвоним за 5 минут</h3>
             <p class="hl-modal__sub">Оставьте телефон — мастер свяжется, уточнит задачу и назовёт цену.</p>
             <form class="hl-form" id="hlModalForm" novalidate>
-                <input type="text" name="website" class="hl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <input type="text" name="lead_check" class="hl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
                 <input type="hidden" name="source" value="Обратный звонок">
                 <input class="hl-field" type="text" name="name" placeholder="Ваше имя" autocomplete="name">
                 <input class="hl-field" type="tel" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
@@ -156,7 +156,7 @@
             phone: fv('phone'),
             message: fv('message'),
             source: sourceInput.value,
-            website: form.elements['website'] ? form.elements['website'].value : ''
+            lead_check: form.elements['lead_check'] ? form.elements['lead_check'].value : ''
         };
         if (data.phone.replace(/\D/g, '').length < 5) {
             var er = document.createElement('p'); er.className = 'hl-err'; er.textContent = 'Укажите телефон для связи.';

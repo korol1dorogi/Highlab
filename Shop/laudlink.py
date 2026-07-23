@@ -772,26 +772,57 @@ class LaudLinkParser:
                     properties[prop_name] = prop_value
         return properties
 
+    def _block_to_text(self, block):
+        """Текст блока с сохранением структуры.
+
+        get_text(strip=True) без разделителя склеивает текст соседних тегов
+        («процессоромIntel Core i5и8 ГБ»), поэтому: блочные теги — отдельными
+        строками, инлайновые — через пробел, служебный заголовок «Описание»
+        (вкладка на сайте поставщика) отбрасывается.
+        """
+        block_tags = ['p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr']
+        lines = []
+        inner_blocks = block.find_all(block_tags)
+        if inner_blocks:
+            for b in inner_blocks:
+                if b.find_parent(block_tags):  # не дублируем вложенные блоки
+                    continue
+                t = re.sub(r'\s+', ' ', b.get_text(separator=' ', strip=True))
+                if t:
+                    lines.append(t)
+        else:
+            t = re.sub(r'\s+', ' ', block.get_text(separator=' ', strip=True))
+            if t:
+                lines.append(t)
+
+        # Срезаем заголовок вкладки «Описание» — отдельной строкой или приклеенный.
+        while lines and lines[0].lower().strip(' :—-') in ('описание', 'description'):
+            lines.pop(0)
+        if lines and lines[0].startswith('Описание'):
+            lines[0] = lines[0][len('Описание'):].lstrip(' :—-')
+
+        return '\n'.join(lines) or None
+
     def _parse_description(self, soup):
-        description_text = None
         description_block = soup.find('div', class_='product__short-description')
         if description_block:
-            description_text = description_block.get_text(strip=True)
-        
-        if not description_text:
-            description_selectors = [
-                '.product__description-content',
-                '.static-text',
-                '[class*="description"]'
-            ]
-            for selector in description_selectors:
-                desc_block = soup.select_one(selector)
-                if desc_block:
-                    description_text = desc_block.get_text(strip=True)
-                    if description_text:
-                        break
-        
-        return description_text
+            text = self._block_to_text(description_block)
+            if text:
+                return text
+
+        description_selectors = [
+            '.product__description-content',
+            '.static-text',
+            '[class*="description"]'
+        ]
+        for selector in description_selectors:
+            desc_block = soup.select_one(selector)
+            if desc_block:
+                text = self._block_to_text(desc_block)
+                if text:
+                    return text
+
+        return None
 
     def handle_pagination(self, category_url, main_category, subcategory=None):
         """Обрабатывает пагинацию в категории или подкатегории"""

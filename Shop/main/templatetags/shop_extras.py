@@ -9,6 +9,25 @@ from django.conf import settings
 register = template.Library()
 
 
+@register.filter
+def ru_plural(value, forms):
+    """Русское склонение существительного при числе.
+    Использование: {{ n|ru_plural:"вариант,варианта,вариантов" }}"""
+    try:
+        one, few, many = [f.strip() for f in forms.split(',')]
+        n = abs(int(value)) % 100
+    except (TypeError, ValueError):
+        return ''
+    if 11 <= n <= 14:
+        return many
+    n %= 10
+    if n == 1:
+        return one
+    if 2 <= n <= 4:
+        return few
+    return many
+
+
 @register.simple_tag
 def thumb(image_field, size=400):
     """Возвращает URL WebP-превью изображения, вписанного в квадрат size×size.

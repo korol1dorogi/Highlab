@@ -16,7 +16,7 @@
         <div class="pcard__cat">{{ product.category.name }}</div>
         <a class="pcard__title" href="{% url 'shop:product_detail' product.slug %}">{{ product.name }}</a>
         {% if product.variants.count > 1 %}
-        <div class="pcard__variants">{{ product.variants.count }} вариант{{ product.variants.count|pluralize:"а,ов" }}</div>
+        <div class="pcard__variants">{{ product.variants.count }} {{ product.variants.count|ru_plural:"вариант,варианта,вариантов" }}</div>
         {% endif %}
 
         <div class="pcard__price">

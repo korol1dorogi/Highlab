@@ -279,6 +279,9 @@ JAZZMIN_SETTINGS = {
     'changeform_format': 'horizontal_tabs',
     'language_chooser': False,
     'related_modal_active': True,
+    # Google Fonts из РФ часто недоступны: блокирующий <link> в <head> держал каждую
+    # страницу админки до таймаута. Используем системный шрифт.
+    'use_google_fonts_cdn': False,
     'topmenu_links': [
         {'name': 'Открыть сайт', 'url': '/', 'new_window': True},
         {'model': 'main.order'},

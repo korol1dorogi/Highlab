@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Count
 from django.utils.html import format_html
 from mptt.admin import MPTTModelAdmin
 from .models import Category, Product, ProductImage, ProductProperty, ProductVariant, Review, Order, OrderItem
@@ -32,10 +33,14 @@ class CategoryAdmin(MPTTModelAdmin):
         }),
     )
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_product_count=Count('products'))
+
     def product_count(self, obj):
         """Количество товаров в категории"""
-        return obj.products.count()
+        return obj._product_count
     product_count.short_description = 'Количество товаров'
+    product_count.admin_order_field = '_product_count'
 
 class ProductImageInline(admin.TabularInline):
     """
@@ -97,6 +102,11 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ['created', 'updated', 'main_image_preview', 'total_quantity', 'external_id']
     list_editable = ['base_price', 'old_price', 'available']
     actions = ['make_available', 'make_unavailable']
+    # Категория и варианты (для «В наличии») одним запросом, а не по 2 на каждую строку.
+    list_select_related = ['category']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('variants')
     
     # Inline для изображений, характеристик и вариантов
     inlines = [ProductImageInline, ProductPropertyInline, ProductVariantInline]

@@ -31,6 +31,9 @@ urlpatterns = [
     # Личный кабинет (регистрация, вход, профиль)
     path('accounts/', include('accounts.urls', namespace='accounts')),
 
+    # Мониторинг бэкапов клиентов: API для PowerShell-скриптов + страница отчётов (только персонал)
+    path('monitoring/', include('monitoring.urls', namespace='monitoring')),
+
     # Главная страница
     path('', include('index.urls', namespace='index')),
 ]

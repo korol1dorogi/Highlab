@@ -1,0 +1,7 @@
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a href="?{% if query %}{{ query }}&{% endif %}page={{ page.previous_page_number }}">← новее</a>{% endif %}
+  <span class="muted">стр. {{ page.number }} из {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?{% if query %}{{ query }}&{% endif %}page={{ page.next_page_number }}">старее →</a>{% endif %}
+</div>
+{% endif %}

@@ -35,6 +35,9 @@ GROUP_DEFS = [
     ('Заявки и заказы', 'grp_orders', [
         'index.lead', 'main.order', 'main.orderitem',
     ]),
+    ('Мониторинг бэкапов', 'grp_monitoring', [
+        'monitoring.monitoredcompany', 'monitoring.monitoredhost', 'monitoring.job', 'monitoring.report',
+    ]),
 ]
 SYSTEM_GROUP = ('Служебное', 'grp_system')
 

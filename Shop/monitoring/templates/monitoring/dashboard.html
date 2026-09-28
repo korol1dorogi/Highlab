@@ -1,0 +1,70 @@
+{% extends 'monitoring/_base.html' %}
+{% load monitoring_tags %}
+
+{% block content %}
+<div class="tiles">
+  {% for code, label, n in counters %}
+    <div class="tile"><span class="badge s-{{ code }}">{{ code|status_icon }} {{ label }}</span><b>{{ n }}</b></div>
+  {% endfor %}
+</div>
+<p class="muted">Текущее состояние заданий на {{ now|date:"d.m.Y H:i" }}.</p>
+
+{% for g in groups %}
+  <div class="card">
+    <h2 style="margin-top:4px">🏢 {{ g.company.name }}</h2>
+    {% for h in g.hosts %}
+      <div class="host">
+        🖥 {{ h.host.name }}
+        <span class="muted" style="font-weight:400">
+          {% if h.host.last_seen_at %}последний отчёт {{ h.host.last_seen_at|date:"d.m H:i" }}{% else %}ещё не выходил на связь{% endif %}
+          {% if h.host.os_info %}· {{ h.host.os_info }}{% endif %}
+        </span>
+      </div>
+      {% if h.jobs %}
+      <div class="table-wrap"><table>
+        <tr><th>Статус</th><th>Задание</th><th>База</th><th>Последний отчёт</th><th>Ждём каждые</th></tr>
+        {% for job in h.jobs %}
+          <tr>
+            <td><span class="badge s-{{ job.status_now }}">{{ job.status_now|status_icon }} {{ job.status_now|status_label }}</span></td>
+            <td><a href="{% url 'monitoring:job_detail' job.pk %}">{{ job.name }}</a> <span class="muted">{{ job.get_kind_display }}</span></td>
+            <td>{{ job.database }} <span class="muted">{{ job.get_engine_display }}</span></td>
+            <td>{{ job.last_report_at|date:"d.m.Y H:i"|default:"—" }}</td>
+            <td>{{ job.expected_every_hours }} ч</td>
+          </tr>
+        {% endfor %}
+      </table></div>
+      {% else %}
+        <p class="muted">Заданий пока нет — появятся после первого отчёта скрипта.</p>
+      {% endif %}
+    {% empty %}
+      <p class="muted">Серверов нет. Добавьте сервер в админке и пропишите его токен в скрипты.</p>
+    {% endfor %}
+  </div>
+{% empty %}
+  <div class="card">Компаний на мониторинге пока нет. Добавьте их в админке: «Мониторинг бэкапов клиентов».</div>
+{% endfor %}
+
+<h2>Журнал отчётов</h2>
+<form class="filters" method="get">
+  <select name="company">
+    <option value="">Все компании</option>
+    {% for c in all_companies %}<option value="{{ c.pk }}" {% if filters.company == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+  </select>
+  <select name="status">
+    <option value="">Все статусы</option>
+    {% for code, label in statuses %}<option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="days">
+    <option value="1" {% if filters.days == 1 %}selected{% endif %}>за сутки</option>
+    <option value="7" {% if filters.days == 7 %}selected{% endif %}>за неделю</option>
+    <option value="30" {% if filters.days == 30 %}selected{% endif %}>за месяц</option>
+    <option value="90" {% if filters.days == 90 %}selected{% endif %}>за 3 месяца</option>
+  </select>
+  <button type="submit">Показать</button>
+</form>
+
+<div class="card table-wrap">
+  {% include 'monitoring/_reports_table.html' with reports=page show_job=True %}
+</div>
+{% include 'monitoring/_pager.html' %}
+{% endblock %}

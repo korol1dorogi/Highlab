@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     'index',
     'content',
     'accounts',
+    'monitoring',
     'mptt',
     'easy_pdf',
     'django_ckeditor_5',
@@ -227,6 +228,21 @@ TELEGRAM_CHAT_IDS = [
 # Обратная совместимость: первый ID как одиночный chat_id
 TELEGRAM_CHAT_ID = TELEGRAM_CHAT_IDS[0] if TELEGRAM_CHAT_IDS else 0
 
+# --- Мониторинг бэкапов клиентов (приложение monitoring) ---
+# Кому слать тревоги и ежедневную сводку. Пусто — тем же, кому приходят заказы (TELEGRAM_ADMIN_IDS).
+MONITORING_TELEGRAM_CHAT_IDS = [
+    int(x) for x in config('MONITORING_TELEGRAM_CHAT_IDS', default='', cast=Csv()) if str(x).strip()
+]
+_SITE = config('MONITORING_SITE_URL', default='https://xn----7sbadh8ar0abscwf3p.xn--p1ai').rstrip('/')
+MONITORING_DASHBOARD_URL = f'{_SITE}/monitoring/'
+MONITORING_API_URL = f'{_SITE}/monitoring/api/report/'
+# Сразу писать в Telegram, когда бэкап упал / снова заработал (иначе — только в ежедневной сводке).
+MONITORING_INSTANT_ALERTS = config('MONITORING_INSTANT_ALERTS', default=True, cast=bool)
+# Запас (ч) сверх ожидаемого интервала, после которого задание без отчёта считается пропущенным.
+MONITORING_GRACE_HOURS = config('MONITORING_GRACE_HOURS', default=2, cast=int)
+# Сколько дней хранить отчёты (чистится командой send_monitoring_digest).
+MONITORING_RETENTION_DAYS = config('MONITORING_RETENTION_DAYS', default=180, cast=int)
+
 # --- Email ---
 # По умолчанию письма печатаются в консоль (работает без SMTP).
 # Для боевой отправки задайте в .env: EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend + хост/логин/пароль.
@@ -267,6 +283,7 @@ JAZZMIN_SETTINGS = {
         {'name': 'Открыть сайт', 'url': '/', 'new_window': True},
         {'model': 'main.order'},
         {'model': 'index.lead'},
+        {'name': 'Бэкапы клиентов', 'url': '/monitoring/'},
     ],
     'default_icon_parents': 'fas fa-folder',
     'default_icon_children': 'fas fa-circle',
@@ -297,6 +314,11 @@ JAZZMIN_SETTINGS = {
         'grp_orders.lead': 'fas fa-inbox',
         'grp_orders.order': 'fas fa-receipt',
         'grp_orders.orderitem': 'fas fa-list-check',
+        # Мониторинг бэкапов клиентов
+        'grp_monitoring.monitoredcompany': 'fas fa-building',
+        'grp_monitoring.monitoredhost': 'fas fa-server',
+        'grp_monitoring.job': 'fas fa-database',
+        'grp_monitoring.report': 'fas fa-clipboard-check',
         # Служебное
         'grp_system.profile': 'fas fa-id-badge',
         'grp_system.user': 'fas fa-user',

@@ -33,6 +33,7 @@ def robots_txt(request):
         "Disallow: /admin/",
         "Disallow: /ckeditor5/",
         "Disallow: /accounts/",
+        "Disallow: /monitoring/",
         "Disallow: /shop_electronic/cart/",
         "Disallow: /shop_electronic/checkout/",
         "Disallow: /shop_electronic/order/",

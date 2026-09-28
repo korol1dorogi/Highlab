@@ -30,3 +30,7 @@ staticfiles/
 *.out
 cloudflared.*
 pinggy.*
+# Мониторинг: конфиг с токеном, логи и очередь скриптов на серверах клиентов
+deploy/monitoring/monitor.config.psd1
+deploy/monitoring/logs/
+deploy/monitoring/queue/

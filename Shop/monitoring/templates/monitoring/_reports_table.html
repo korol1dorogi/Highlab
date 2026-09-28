@@ -1,0 +1,24 @@
+{% load monitoring_tags %}
+<table>
+  <tr>
+    <th>Получен</th><th>Статус</th>{% if show_job %}<th>Компания / сервер / задание</th>{% endif %}
+    <th>Размер</th><th>Длительность</th><th>Сообщение</th>
+  </tr>
+  {% for r in reports %}
+    <tr>
+      <td style="white-space:nowrap">{{ r.received_at|date:"d.m.Y H:i" }}</td>
+      <td><span class="badge s-{{ r.status }}">{{ r.status|status_icon }} {{ r.get_status_display }}</span></td>
+      {% if show_job %}
+        <td>{{ r.job.host.company.name }} / {{ r.job.host.name }} /
+            <a href="{% url 'monitoring:job_detail' r.job.pk %}">{{ r.job.name }}</a></td>
+      {% endif %}
+      <td style="white-space:nowrap">{{ r.size_bytes|human_size }}</td>
+      <td style="white-space:nowrap">{{ r.duration|duration }}</td>
+      <td class="msg">{{ r.message }}{% if r.path %}<div class="muted">{{ r.path }}</div>{% endif %}
+        {% if r.details %}<details><summary>подробности</summary><pre>{{ r.details|pprint }}</pre></details>{% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="muted">Отчётов нет.</td></tr>
+  {% endfor %}
+</table>

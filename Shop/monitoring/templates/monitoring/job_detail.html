@@ -1,0 +1,27 @@
+{% extends 'monitoring/_base.html' %}
+{% load monitoring_tags %}
+
+{% block title %}{{ job.name }}{% endblock %}
+{% block heading %}{{ job.name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <p style="margin:0 0 6px">
+    <span class="badge s-{{ job.status_now }}">{{ job.status_now|status_icon }} {{ job.status_now|status_label }}</span>
+    <span class="muted">{{ job.get_kind_display }}{% if job.engine %} · {{ job.get_engine_display }}{% endif %}{% if job.database %} · база {{ job.database }}{% endif %}</span>
+  </p>
+  <div>🏢 {{ job.host.company.name }} / 🖥 {{ job.host.name }}</div>
+  <div class="muted">
+    Отчёт ожидается каждые {{ job.expected_every_hours }} ч.
+    Последний: {{ job.last_report_at|date:"d.m.Y H:i"|default:"—" }};
+    пропуском считается отсутствие отчёта после {{ job.deadline|date:"d.m.Y H:i" }}.
+    <a href="/admin/monitoring/job/{{ job.pk }}/change/">Изменить</a>
+  </div>
+</div>
+
+<h2>История</h2>
+<div class="card table-wrap">
+  {% include 'monitoring/_reports_table.html' with reports=page show_job=False %}
+</div>
+{% include 'monitoring/_pager.html' %}
+{% endblock %}
